@@ -55,6 +55,55 @@ $telegramProject = [regex]::Replace(
 )
 Write-Utf8NoBom $telegramProjectPath $telegramProject
 
+# Unigram v12.8 pins a prerelease LibVLC UWP package that has been removed
+# from NuGet. The current package keeps the runtime-copy targets, but no longer
+# ships the native .props file that used to configure the C++ compiler/linker.
+# Upgrade both managed and native references and add the x64 native settings
+# explicitly so the sideload build retains ordinary media playback.
+$libVlcVersion = "3.3.2"
+$nativePackagesPath = Join-Path $sourceRoot "Telegram.Native\packages.config"
+$nativePackages = [System.IO.File]::ReadAllText($nativePackagesPath)
+$nativePackages = $nativePackages.Replace('VideoLAN.LibVLC.UWP" version="3.0.22-rc1"', "VideoLAN.LibVLC.UWP`" version=`"$libVlcVersion`"")
+Write-Utf8NoBom $nativePackagesPath $nativePackages
+
+$nativeProjectPath = Join-Path $sourceRoot "Telegram.Native\Telegram.Native.vcxproj"
+$nativeProject = [System.IO.File]::ReadAllText($nativeProjectPath)
+$nativeProject = $nativeProject.Replace("VideoLAN.LibVLC.UWP.3.0.22-rc1", "VideoLAN.LibVLC.UWP.$libVlcVersion")
+$nativeProject = [regex]::Replace(
+  $nativeProject,
+  '(?m)^\s*<Import Project="[^\r\n]*VideoLAN\.LibVLC\.UWP\.props"[^\r\n]*/>\r?\n?',
+  ""
+)
+$nativeProject = [regex]::Replace(
+  $nativeProject,
+  '(?m)^\s*<Error Condition="[^\r\n]*VideoLAN\.LibVLC\.UWP\.props[^\r\n]*/>\r?\n?',
+  ""
+)
+$libVlcNativeSettings = @"
+  <ItemDefinitionGroup Condition="'`$(Configuration)|`$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\packages\VideoLAN.LibVLC.UWP.$libVlcVersion\build\win10-x64\sdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>..\packages\VideoLAN.LibVLC.UWP.$libVlcVersion\build\win10-x64\sdk\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libvlc.lib;libvlccore.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+"@
+$nativeProject = $nativeProject.Replace(
+  '  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />',
+  "$libVlcNativeSettings  <Import Project=`"`$(VCTargetsPath)\Microsoft.Cpp.targets`" />"
+)
+Write-Utf8NoBom $nativeProjectPath $nativeProject
+
+$telegramProject = [System.IO.File]::ReadAllText($telegramProjectPath)
+$telegramProject = [regex]::Replace(
+  $telegramProject,
+  '(<PackageReference Include="VideoLAN\.LibVLC\.UWP">\s*<Version>)[^<]+(</Version>)',
+  "`${1}$libVlcVersion`${2}"
+)
+Write-Utf8NoBom $telegramProjectPath $telegramProject
+
 # Give the sideload package a distinct identity. Keep the publisher subject of
 # the checked-in temporary certificate so Windows can verify the signature.
 $updateManifestPath = Join-Path $sourceRoot "UpdateManifest.ps1"
