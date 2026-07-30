@@ -212,6 +212,7 @@ AppName = "Unigram"
     expect(secret).toContain("ApiId = 12345;");
     expect(secret).toContain('ApiHash = "0123456789abcdef0123456789abcdef";');
     expect(nativeCallsStub).toContain("namespace Telegram.Native.Calls");
+    expect(nativeCallsStub).not.toContain("public enum VoipDataSaving");
     expect(nativeCallsStub).toContain("public sealed class VoipGroupManager");
     expect(nativeCallsStub).toContain("public sealed class VoipVideoOutputSink");
     expect(messageDelegate).toContain("using System.Threading.Tasks;");

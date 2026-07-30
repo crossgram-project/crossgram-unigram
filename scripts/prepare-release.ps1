@@ -81,7 +81,6 @@ using Windows.UI.Composition;
 
 namespace Telegram.Native.Calls
 {
-    public enum VoipDataSaving { Never, Mobile, Always }
     public enum VoipReadyState { WaitInit, WaitInitAck, Established, Failed, Reconnecting }
     public enum VoipAudioState { Muted, Active }
     public enum VoipVideoState { Inactive, Paused, Active }
