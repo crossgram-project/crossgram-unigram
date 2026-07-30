@@ -401,6 +401,61 @@ if (-not $messageDelegate.Contains("using Windows.Storage;")) {
 }
 Write-Utf8NoBom $messageDelegatePath $messageDelegate
 
+# .NET 10 currently loses the NativeAOT runtime-pack path when a .wapproj
+# publishes an SDK-style project (dotnet/sdk#53387). Unigram's full-trust
+# Telegram.Stub is affected even for an x64-on-x64 build. Ensure restore keeps
+# the runtime pack and rebuild the missing SDK/framework item groups from the
+# NuGet cache before ILCompiler validates them.
+$nativeAotPackageDownload = '    <PackageDownload Include="Microsoft.NETCore.App.Runtime.NativeAOT.win-x64" Version="[$(BundledNETCoreAppPackageVersion)]" />'
+$stubProjectPath = Join-Path $sourceRoot "Telegram.Stub\Telegram.Stub.csproj"
+$stubProject = [System.IO.File]::ReadAllText($stubProjectPath)
+if (-not $stubProject.Contains("CrossgramResolveNativeAotSdkAssembliesFallback")) {
+  $nativeAotWorkaround = @'
+  <ItemGroup>
+    <PackageDownload Include="Microsoft.NETCore.App.Runtime.NativeAOT.win-x64" Version="[$(BundledNETCoreAppPackageVersion)]" />
+  </ItemGroup>
+
+  <Target Name="CrossgramResolveNativeAotSdkAssembliesFallback"
+          AfterTargets="SetupProperties"
+          BeforeTargets="_ComputeAssembliesToCompileToNative"
+          Condition="'$(PublishAot)' == 'true' and '@(PrivateSdkAssemblies)' == '' and '$(RuntimeIdentifier)' != ''">
+    <PropertyGroup>
+      <_CrossgramIlcPackageVersion>$([System.IO.Path]::GetFileName($([System.IO.Path]::GetDirectoryName($([System.IO.Path]::GetDirectoryName($(ILCompilerTargetsPath)))))))</_CrossgramIlcPackageVersion>
+      <_CrossgramNativeAotRuntimePack>$(NuGetPackageRoot)microsoft.netcore.app.runtime.nativeaot.$(RuntimeIdentifier)$([System.IO.Path]::DirectorySeparatorChar)$(_CrossgramIlcPackageVersion)$([System.IO.Path]::DirectorySeparatorChar)runtimes$([System.IO.Path]::DirectorySeparatorChar)$(RuntimeIdentifier)$([System.IO.Path]::DirectorySeparatorChar)</_CrossgramNativeAotRuntimePack>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(_CrossgramNativeAotRuntimePack)native')"
+           Text="Crossgram could not find the .NET NativeAOT runtime pack at $(_CrossgramNativeAotRuntimePack)." />
+    <PropertyGroup>
+      <IlcSdkPath>$(_CrossgramNativeAotRuntimePack)native$([System.IO.Path]::DirectorySeparatorChar)</IlcSdkPath>
+      <IlcFrameworkNativePath>$(IlcSdkPath)</IlcFrameworkNativePath>
+      <IlcFrameworkPath>$(_CrossgramNativeAotRuntimePack)lib$([System.IO.Path]::DirectorySeparatorChar)net10.0$([System.IO.Path]::DirectorySeparatorChar)</IlcFrameworkPath>
+    </PropertyGroup>
+    <ItemGroup>
+      <PrivateSdkAssemblies Include="$(IlcSdkPath)*.dll" />
+      <FrameworkAssemblies Include="$(IlcFrameworkPath)*.dll" />
+      <DefaultFrameworkAssemblies Include="@(FrameworkAssemblies)" />
+      <DefaultFrameworkAssemblies Include="@(PrivateSdkAssemblies)" Exclude="@(DefaultFrameworkAssemblies)" />
+    </ItemGroup>
+  </Target>
+'@
+  if (-not $stubProject.Contains("</Project>")) {
+    throw "Telegram.Stub.csproj does not contain the Project closing tag"
+  }
+  $stubProject = $stubProject.Replace("</Project>", "$nativeAotWorkaround`r`n</Project>")
+}
+Write-Utf8NoBom $stubProjectPath $stubProject
+
+$msixProjectPath = Join-Path $sourceRoot "Telegram.Msix\Telegram.Msix.wapproj"
+$msixProject = [System.IO.File]::ReadAllText($msixProjectPath)
+if (-not $msixProject.Contains("Microsoft.NETCore.App.Runtime.NativeAOT.win-x64")) {
+  if (-not $msixProject.Contains("</Project>")) {
+    throw "Telegram.Msix.wapproj does not contain the Project closing tag"
+  }
+  $msixRuntimePack = "  <ItemGroup>`r`n$nativeAotPackageDownload`r`n  </ItemGroup>"
+  $msixProject = $msixProject.Replace("</Project>", "$msixRuntimePack`r`n</Project>")
+}
+Write-Utf8NoBom $msixProjectPath $msixProject
+
 # Unigram v12.8 pins a prerelease LibVLC UWP package that has been removed
 # from NuGet. The current package keeps the runtime-copy targets, but no longer
 # ships the native .props file that used to configure the C++ compiler/linker.

@@ -80,6 +80,9 @@ describe("Windows release contract", () => {
     expect(script).not.toContain("public enum VoipDataSaving");
     expect(script).toContain("using System.Threading.Tasks;");
     expect(script).toContain("using Windows.Storage;");
+    expect(script).toContain("CrossgramResolveNativeAotSdkAssembliesFallback");
+    expect(script).toContain("Microsoft.NETCore.App.Runtime.NativeAOT.win-x64");
+    expect(script).toContain("PrivateSdkAssemblies");
     expect(script).toContain('$libVlcVersion = "3.3.2"');
     expect(script).toContain("libvlc.lib;libvlccore.lib");
     expect(script).toContain("UTF8Encoding");

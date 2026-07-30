@@ -20,6 +20,8 @@ describe("release source preparation", () => {
     await mkdir(path.join(root, "Telegram"), { recursive: true });
     await mkdir(path.join(root, "Telegram", "ViewModels"), { recursive: true });
     await mkdir(path.join(root, "Telegram.Native"), { recursive: true });
+    await mkdir(path.join(root, "Telegram.Stub"), { recursive: true });
+    await mkdir(path.join(root, "Telegram.Msix"), { recursive: true });
     await mkdir(
       path.join(
         root,
@@ -83,6 +85,19 @@ typedef ssize_t (*libvlc_media_read_cb)(void *opaque, unsigned char *buf, size_t
 <packages>
   <package id="VideoLAN.LibVLC.UWP" version="3.0.22-rc1" targetFramework="native" />
 </packages>`,
+      "utf8",
+    );
+    await writeFile(
+      path.join(root, "Telegram.Stub", "Telegram.Stub.csproj"),
+      `<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net10.0-windows10.0.18362.0</TargetFramework><PublishAot>true</PublishAot></PropertyGroup>
+</Project>`,
+      "utf8",
+    );
+    await writeFile(
+      path.join(root, "Telegram.Msix", "Telegram.Msix.wapproj"),
+      `<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+</Project>`,
       "utf8",
     );
     await writeFile(
@@ -157,6 +172,17 @@ AppName = "Unigram"
     await execFileAsync(powershell, [
       "-NoProfile",
       "-File",
+      path.resolve("scripts/prepare-release.ps1"),
+      "-Source",
+      root,
+      "-ApiId",
+      "12345",
+      "-ApiHash",
+      "0123456789abcdef0123456789abcdef",
+    ]);
+    await execFileAsync(powershell, [
+      "-NoProfile",
+      "-File",
       path.resolve("scripts/prepare-libvlc-package.ps1"),
       "-Source",
       root,
@@ -172,6 +198,14 @@ AppName = "Unigram"
     );
     const messageDelegate = await readFile(
       path.join(root, "Telegram", "ViewModels", "MessageDelegate.cs"),
+      "utf8",
+    );
+    const stubProject = await readFile(
+      path.join(root, "Telegram.Stub", "Telegram.Stub.csproj"),
+      "utf8",
+    );
+    const msixProject = await readFile(
+      path.join(root, "Telegram.Msix", "Telegram.Msix.wapproj"),
       "utf8",
     );
     const manifestScript = await readFile(path.join(root, "UpdateManifest.ps1"), "utf8");
@@ -217,6 +251,12 @@ AppName = "Unigram"
     expect(nativeCallsStub).toContain("public sealed class VoipVideoOutputSink");
     expect(messageDelegate).toContain("using System.Threading.Tasks;");
     expect(messageDelegate).toContain("using Windows.Storage;");
+    expect(stubProject).toContain("CrossgramResolveNativeAotSdkAssembliesFallback");
+    expect(stubProject.match(/CrossgramResolveNativeAotSdkAssembliesFallback/g)).toHaveLength(1);
+    expect(stubProject).toContain("Microsoft.NETCore.App.Runtime.NativeAOT.win-x64");
+    expect(stubProject).toContain("PrivateSdkAssemblies");
+    expect(msixProject).toContain("Microsoft.NETCore.App.Runtime.NativeAOT.win-x64");
+    expect(msixProject.match(/Microsoft\.NETCore\.App\.Runtime\.NativeAOT\.win-x64/g)).toHaveLength(1);
     expect(manifestScript.match(/CrossgramProject\.CrossgramUnigram/g)).toHaveLength(3);
     expect(manifestScript.match(/Crossgram Unigram/g)?.length).toBeGreaterThanOrEqual(6);
     expect(libVlcTargets).toContain('SDKReference Include="Microsoft.VCLibs, Version=14.0"');
