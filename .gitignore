@@ -7,4 +7,6 @@ node_modules/
 !.yarn/sdks
 coverage/
 dist/
+**/bin/
+**/obj/
 *.log

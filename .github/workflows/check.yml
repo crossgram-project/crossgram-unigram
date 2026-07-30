@@ -1,0 +1,63 @@
+name: Check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: yarn
+      - run: corepack enable
+      - run: yarn install --immutable
+      - run: yarn check
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - run: dotnet test tests/dotnet/Crossgram.Unigram.Tests.csproj
+      - name: Clone current Unigram
+        run: git clone --depth 1 --branch develop https://github.com/UnigramDev/Unigram.git upstream
+      - name: Verify semantic patch against real source
+        env:
+          CROSSGRAM_UNIGRAM_SOURCE: upstream
+        run: yarn e2e:source
+
+  windows-integration:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: yarn
+      - run: corepack enable
+      - run: yarn install --immutable
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - run: dotnet test tests/dotnet/Crossgram.Unigram.Tests.csproj
+      - name: Clone and patch current Unigram
+        shell: pwsh
+        run: |
+          git clone --depth 1 --branch develop https://github.com/UnigramDev/Unigram.git upstream
+          yarn patch:source --source upstream
+      - name: Parse patched PowerShell and XML files
+        shell: pwsh
+        run: |
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'upstream/Libraries/tdjson/build.ps1'),
+            [ref]$null,
+            [ref]$errors
+          ) | Out-Null
+          if ($errors.Count -gt 0) {
+            $errors | ForEach-Object { Write-Error $_ }
+            exit 1
+          }
+          [xml](Get-Content upstream/Telegram/Telegram.csproj -Raw -Encoding utf8) | Out-Null
+          [xml](Get-Content upstream/Telegram/Crossgram/ServerConfigurationPopup.xaml -Raw -Encoding utf8) | Out-Null
