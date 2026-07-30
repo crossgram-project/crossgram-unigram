@@ -63,6 +63,7 @@ describe("Windows release contract", () => {
     expect(script).toContain("Microsoft.VCLibs, Version=14.0");
     expect(script).toContain("videolan.libvlc.uwp\\$Version");
     expect(script).toContain("RequireGlobalPackage");
+    expect(script).toContain("$env:USERPROFILE } else { $env:HOME");
     expect(script).toContain("_SSIZE_T_DEFINED");
     expect(script).toContain("typedef SSIZE_T ssize_t;");
     expect(script).toContain("UTF8Encoding");

@@ -39,7 +39,11 @@ Normalize-LibVlcTargets $targetsPath
 $globalPackagesRoot = if ($env:NUGET_PACKAGES) {
   $env:NUGET_PACKAGES
 } else {
-  Join-Path $env:USERPROFILE ".nuget\packages"
+  $profileRoot = if ($env:USERPROFILE) { $env:USERPROFILE } else { $env:HOME }
+  if (-not $profileRoot) {
+    throw "Cannot locate the NuGet global packages directory"
+  }
+  Join-Path $profileRoot ".nuget\packages"
 }
 $globalTargetsPath = Join-Path $globalPackagesRoot "videolan.libvlc.uwp\$Version\build\VideoLAN.LibVLC.UWP.targets"
 if (Test-Path -LiteralPath $globalTargetsPath -PathType Leaf) {
