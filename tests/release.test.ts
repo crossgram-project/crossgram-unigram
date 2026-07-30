@@ -48,6 +48,8 @@ describe("Windows release contract", () => {
     const script = await readFile(path.resolve("scripts/prepare-libvlc-package.ps1"), "utf8");
     expect(script).toContain("Microsoft.VCLibs.120, Version=14.0");
     expect(script).toContain("Microsoft.VCLibs, Version=14.0");
+    expect(script).toContain("_SSIZE_T_DEFINED");
+    expect(script).toContain("typedef SSIZE_T ssize_t;");
     expect(script).toContain("UTF8Encoding");
   });
 });

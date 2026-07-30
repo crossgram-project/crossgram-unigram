@@ -7,9 +7,13 @@ param (
 $ErrorActionPreference = "Stop"
 $sourceRoot = (Resolve-Path $Source).Path
 $targetsPath = Join-Path $sourceRoot "packages\VideoLAN.LibVLC.UWP.$Version\build\VideoLAN.LibVLC.UWP.targets"
+$mediaHeaderPath = Join-Path $sourceRoot "packages\VideoLAN.LibVLC.UWP.$Version\build\win10-x64\sdk\include\vlc\libvlc_media.h"
 
 if (-not (Test-Path -LiteralPath $targetsPath -PathType Leaf)) {
   throw "LibVLC UWP targets were not restored: $targetsPath"
+}
+if (-not (Test-Path -LiteralPath $mediaHeaderPath -PathType Leaf)) {
+  throw "LibVLC UWP media header was not restored: $mediaHeaderPath"
 }
 
 $targets = [System.IO.File]::ReadAllText($targetsPath)
@@ -26,4 +30,21 @@ $targets = $targets.Replace(
 )
 [System.IO.File]::WriteAllText($targetsPath, $targets, [System.Text.UTF8Encoding]::new($false))
 
-Write-Output "Prepared LibVLC UWP package targets at $targetsPath"
+$mediaHeader = [System.IO.File]::ReadAllText($mediaHeaderPath)
+$ssizeCompatibility = @'
+#if defined(_MSC_VER) && !defined(_SSIZE_T_DEFINED)
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
+#define _SSIZE_T_DEFINED
+#endif
+'@
+if (-not $mediaHeader.Contains('_SSIZE_T_DEFINED')) {
+  $headerAnchor = '# ifdef __cplusplus'
+  if (-not $mediaHeader.Contains($headerAnchor)) {
+    throw "LibVLC UWP media header does not contain the expected C++ compatibility anchor"
+  }
+  $mediaHeader = $mediaHeader.Replace($headerAnchor, "$ssizeCompatibility`r`n`r`n$headerAnchor")
+  [System.IO.File]::WriteAllText($mediaHeaderPath, $mediaHeader, [System.Text.UTF8Encoding]::new($false))
+}
+
+Write-Output "Prepared LibVLC UWP package targets and media header"

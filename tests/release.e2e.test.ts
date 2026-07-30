@@ -20,7 +20,16 @@ describe("release source preparation", () => {
     await mkdir(path.join(root, "Telegram"), { recursive: true });
     await mkdir(path.join(root, "Telegram.Native"), { recursive: true });
     await mkdir(
-      path.join(root, "packages", "VideoLAN.LibVLC.UWP.3.3.2", "build"),
+      path.join(
+        root,
+        "packages",
+        "VideoLAN.LibVLC.UWP.3.3.2",
+        "build",
+        "win10-x64",
+        "sdk",
+        "include",
+        "vlc",
+      ),
       { recursive: true },
     );
     await writeFile(
@@ -36,6 +45,27 @@ describe("release source preparation", () => {
     </PackageReference>
   </ItemGroup>
 </Project>`,
+      "utf8",
+    );
+    await writeFile(
+      path.join(
+        root,
+        "packages",
+        "VideoLAN.LibVLC.UWP.3.3.2",
+        "build",
+        "win10-x64",
+        "sdk",
+        "include",
+        "vlc",
+        "libvlc_media.h",
+      ),
+      `#ifndef VLC_LIBVLC_MEDIA_H
+#define VLC_LIBVLC_MEDIA_H 1
+# ifdef __cplusplus
+extern "C" {
+# endif
+typedef ssize_t (*libvlc_media_read_cb)(void *opaque, unsigned char *buf, size_t len);
+#endif`,
       "utf8",
     );
     await writeFile(
@@ -138,6 +168,20 @@ AppName = "Unigram"
       ),
       "utf8",
     );
+    const libVlcMediaHeader = await readFile(
+      path.join(
+        root,
+        "packages",
+        "VideoLAN.LibVLC.UWP.3.3.2",
+        "build",
+        "win10-x64",
+        "sdk",
+        "include",
+        "vlc",
+        "libvlc_media.h",
+      ),
+      "utf8",
+    );
     expect(project).not.toContain("ENABLE_CALLS");
     expect(project).not.toContain("Telegram.Native.Calls");
     expect(project).toContain("<Version>3.3.2</Version>");
@@ -153,5 +197,7 @@ AppName = "Unigram"
     expect(manifestScript.match(/Crossgram Unigram/g)?.length).toBeGreaterThanOrEqual(6);
     expect(libVlcTargets).toContain('SDKReference Include="Microsoft.VCLibs, Version=14.0"');
     expect(libVlcTargets).not.toContain("Microsoft.VCLibs.120");
+    expect(libVlcMediaHeader).toContain("typedef SSIZE_T ssize_t;");
+    expect(libVlcMediaHeader).toContain("_SSIZE_T_DEFINED");
   });
 });
