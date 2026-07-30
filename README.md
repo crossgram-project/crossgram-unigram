@@ -68,6 +68,10 @@ Download the release ZIP, extract it, and run `Add-AppDevPackage.ps1` from the
 extracted AppPackages directory. Windows may ask you to trust the included
 test-signing certificate for sideloading.
 
+Release builds use the Crossgram Telegram API identity by default. Maintainers
+may override it by setting both `CROSSGRAM_TELEGRAM_API_ID` and
+`CROSSGRAM_TELEGRAM_API_HASH`; a partial override fails the build.
+
 ## Server JSON
 
 ~~~json

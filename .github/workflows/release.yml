@@ -263,7 +263,7 @@ jobs:
 
             Download `Crossgram-Unigram-x64.zip`, extract it, and run the included `Add-AppDevPackage.ps1`. The package is test-signed; the ZIP includes the certificate and dependency packages.
 
-            If this repository has no Telegram API credential secrets configured, the binary is intended for Crossgram custom servers. Official Telegram login requires a build made with the maintainer's own API ID and hash.
+            The release uses Crossgram's Telegram API identity by default. Maintainers may override it only by configuring both Telegram API credential secrets together.
           files: |
             release/Crossgram-Unigram-x64.zip
             release/Crossgram-Unigram-x64.*bundle

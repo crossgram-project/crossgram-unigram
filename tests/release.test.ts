@@ -17,6 +17,8 @@ describe("Windows release contract", () => {
     );
     expect(workflow).not.toContain("$apiId = '1'");
     expect(workflow).not.toContain("00000000000000000000000000000000");
+    expect(workflow).toContain("The release uses Crossgram's Telegram API identity by default");
+    expect(workflow).not.toContain("Official Telegram login requires a build");
     expect(workflow).toContain("boost-regex:x64-uwp");
     expect(workflow).toContain("ffmpeg:x64-uwp");
     expect(workflow).toContain("libyuv:x64-uwp");
