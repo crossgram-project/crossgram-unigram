@@ -11,6 +11,12 @@ describe("Windows release contract", () => {
     expect(workflow).toContain("choco install gperf --yes --no-progress");
     expect(workflow).toContain("Get-Command gperf.exe");
     expect(workflow).toContain("prepare-libvlc-package.ps1 -Source upstream");
+    expect(workflow).toContain("CROSSGRAM_DEFAULT_API_ID: '24862414'");
+    expect(workflow).toContain(
+      "CROSSGRAM_DEFAULT_API_HASH: '1745670d4621f50d831db069ecc40285'",
+    );
+    expect(workflow).not.toContain("$apiId = '1'");
+    expect(workflow).not.toContain("00000000000000000000000000000000");
     expect(workflow).toContain("boost-regex:x64-uwp");
     expect(workflow).toContain("ffmpeg:x64-uwp");
     expect(workflow).toContain("libyuv:x64-uwp");
