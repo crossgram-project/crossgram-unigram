@@ -15,6 +15,8 @@ describe("Windows release contract", () => {
     expect(workflow).toContain("ffmpeg[dav1d,opus,vpx]:x64-uwp");
     expect(workflow).toContain("actions/cache/restore@v4");
     expect(workflow).toContain("actions/cache/save@v4");
+    expect(workflow).toContain("x64-uwp-cff6ed4-full-v2");
+    expect(workflow).not.toContain("vcpkg\\downloads");
     expect(workflow).toContain("Apply direct-download TDLib source patch");
     expect(workflow).toContain('${{ github.workspace }}\\upstream\\Libraries\\tdlib');
     expect(workflow).toContain("Verify direct-download TDLib for UWP");

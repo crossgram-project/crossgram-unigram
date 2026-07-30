@@ -97,10 +97,8 @@ jobs:
         id: vcpkg-cache
         uses: actions/cache/restore@v4
         with:
-          path: |
-            vcpkg-cache
-            vcpkg\downloads
-          key: unigram-vcpkg-${{ runner.os }}-x64-uwp-cff6ed4-full-v1
+          path: vcpkg-cache
+          key: unigram-vcpkg-${{ runner.os }}-x64-uwp-cff6ed4-full-v2
 
       - name: Install UWP native dependencies
         shell: pwsh
@@ -129,9 +127,7 @@ jobs:
         if: steps.vcpkg-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
-          path: |
-            vcpkg-cache
-            vcpkg\downloads
+          path: vcpkg-cache
           key: ${{ steps.vcpkg-cache.outputs.cache-primary-key }}
 
       - name: Apply direct-download TDLib source patch
