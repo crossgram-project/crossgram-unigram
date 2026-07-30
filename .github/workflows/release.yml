@@ -96,6 +96,8 @@ jobs:
           Pop-Location
 
       - uses: microsoft/setup-msbuild@v2
+        with:
+          msbuild-architecture: x64
       - uses: nuget/setup-nuget@v2
       # The pinned vcpkg libogg 1.3.5 port still declares compatibility with
       # pre-3.5 CMake projects, which CMake 4 rejects before configuration.
@@ -186,9 +188,12 @@ jobs:
           key: ${{ steps.tdlib-cache.outputs.cache-primary-key }}
 
       - name: Build signed sideload package
+        id: package
+        continue-on-error: true
         shell: pwsh
         run: |
           $env:MSBUILDDISABLENODEREUSE = '1'
+          New-Item -ItemType Directory -Force artifacts | Out-Null
           $solutionDir = "${{ github.workspace }}\upstream\"
           $commonProperties = @(
             '/p:Configuration=Release'
@@ -204,6 +209,7 @@ jobs:
             -RequireGlobalPackage
           msbuild upstream\Telegram.Msix\Telegram.Msix.wapproj `
             /m:1 @commonProperties `
+            /bl:artifacts\unigram-build.binlog `
             /p:BuildInParallel=false `
             /p:UseSharedCompilation=false `
             /p:UapAppxPackageBuildMode=SideloadOnly `
@@ -211,6 +217,45 @@ jobs:
             /p:AppxBundle=Always `
             /p:AppxPackageSigningEnabled=true `
             /p:PackageCertificateKeyFile=Telegram.Msix_TemporaryKey.pfx
+
+      - name: Collect failed XAML diagnostics
+        if: steps.package.outcome == 'failure'
+        shell: pwsh
+        run: |
+          $diagnostics = 'artifacts\xaml-diagnostics'
+          New-Item -ItemType Directory -Force $diagnostics | Out-Null
+          Get-WinEvent -FilterHashtable @{
+            LogName = 'Application'
+            StartTime = (Get-Date).AddMinutes(-30)
+          } -ErrorAction SilentlyContinue |
+            Where-Object { $_.ProviderName -in @('.NET Runtime', 'Application Error', 'Windows Error Reporting') } |
+            Format-List TimeCreated, ProviderName, Id, LevelDisplayName, Message |
+            Out-File "$diagnostics\application-events.txt" -Encoding utf8
+          Get-ChildItem upstream\Telegram\obj\x64\Release -Recurse -Force -ErrorAction SilentlyContinue |
+            Select-Object FullName, Length, LastWriteTime |
+            Format-Table -AutoSize |
+            Out-File "$diagnostics\telegram-obj-files.txt" -Encoding utf8
+          Get-ChildItem upstream\Telegram\obj\x64\Release -Recurse -File -ErrorAction SilentlyContinue |
+            Where-Object { $_.Extension -in @('.json', '.log', '.txt') } |
+            ForEach-Object {
+              $name = $_.FullName.Substring((Resolve-Path 'upstream\Telegram\obj\x64\Release').Path.Length).TrimStart('\')
+              $target = Join-Path $diagnostics $name
+              New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
+              Copy-Item -LiteralPath $_.FullName -Destination $target
+            }
+
+      - name: Upload failed XAML diagnostics
+        if: steps.package.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: unigram-xaml-diagnostics
+          path: artifacts/
+          if-no-files-found: error
+
+      - name: Fail after XAML diagnostics
+        if: steps.package.outcome == 'failure'
+        shell: pwsh
+        run: throw 'Unigram package build failed; XAML diagnostics were uploaded'
 
       - name: Collect and verify release assets
         shell: pwsh

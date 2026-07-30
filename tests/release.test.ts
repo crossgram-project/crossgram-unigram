@@ -45,13 +45,17 @@ describe("Windows release contract", () => {
     expect(workflow).toContain("Telegram.Msix\\Telegram.Msix.wapproj");
     expect(workflow).toContain("/t:Restore @commonProperties");
     expect(workflow).toContain("$env:MSBUILDDISABLENODEREUSE = '1'");
+    expect(workflow).toContain("msbuild-architecture: x64");
     expect(workflow).toContain("/m:1 @commonProperties");
+    expect(workflow).toContain("/bl:artifacts\\unigram-build.binlog");
     expect(workflow).toContain("/p:BuildInParallel=false");
     expect(workflow).toContain("/p:UseSharedCompilation=false");
     expect(workflow).toContain("-RequireGlobalPackage");
     expect(workflow).not.toContain("/restore /m");
     expect(workflow).toContain("AppPackages");
     expect(workflow).toContain("softprops/action-gh-release");
+    expect(workflow).toContain("Upload failed XAML diagnostics");
+    expect(workflow).toContain("Get-WinEvent");
     expect(workflow).toContain("bridge-media:` direct downloads");
   });
 
