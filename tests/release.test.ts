@@ -38,6 +38,9 @@ describe("Windows release contract", () => {
     expect(workflow).toContain("Push-Location upstream\\Libraries\\tdjson");
     expect(workflow).toContain("& .\\build.ps1");
     expect(workflow).toContain("Telegram.Msix\\Telegram.Msix.wapproj");
+    expect(workflow).toContain("/t:Restore @commonProperties");
+    expect(workflow).toContain("-RequireGlobalPackage");
+    expect(workflow).not.toContain("/restore /m");
     expect(workflow).toContain("AppPackages");
     expect(workflow).toContain("softprops/action-gh-release");
     expect(workflow).toContain("bridge-media:` direct downloads");
@@ -58,6 +61,8 @@ describe("Windows release contract", () => {
     const script = await readFile(path.resolve("scripts/prepare-libvlc-package.ps1"), "utf8");
     expect(script).toContain("Microsoft.VCLibs.120, Version=14.0");
     expect(script).toContain("Microsoft.VCLibs, Version=14.0");
+    expect(script).toContain("videolan.libvlc.uwp\\$Version");
+    expect(script).toContain("RequireGlobalPackage");
     expect(script).toContain("_SSIZE_T_DEFINED");
     expect(script).toContain("typedef SSIZE_T ssize_t;");
     expect(script).toContain("UTF8Encoding");

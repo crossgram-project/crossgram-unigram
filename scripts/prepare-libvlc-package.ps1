@@ -1,7 +1,8 @@
 param (
   [Parameter(Mandatory = $true)]
   [string]$Source,
-  [string]$Version = "3.3.2"
+  [string]$Version = "3.3.2",
+  [switch]$RequireGlobalPackage
 )
 
 $ErrorActionPreference = "Stop"
@@ -16,19 +17,36 @@ if (-not (Test-Path -LiteralPath $mediaHeaderPath -PathType Leaf)) {
   throw "LibVLC UWP media header was not restored: $mediaHeaderPath"
 }
 
-$targets = [System.IO.File]::ReadAllText($targetsPath)
 $legacyReference = 'Microsoft.VCLibs.120, Version=14.0'
 $currentReference = 'Microsoft.VCLibs, Version=14.0'
-if (-not $targets.Contains($legacyReference) -and -not $targets.Contains($currentReference)) {
-  throw "LibVLC UWP targets do not contain a recognized Visual C++ runtime SDK reference"
+
+function Normalize-LibVlcTargets([string]$Path) {
+  $targets = [System.IO.File]::ReadAllText($Path)
+  if (-not $targets.Contains($legacyReference) -and -not $targets.Contains($currentReference)) {
+    throw "LibVLC UWP targets do not contain a recognized Visual C++ runtime SDK reference: $Path"
+  }
+
+  $targets = $targets.Replace($legacyReference, $currentReference)
+  $targets = $targets.Replace(
+    "Microsoft Visual C++ 2013 Runtime Package for Windows Universal",
+    "Microsoft Visual C++ Runtime Package for Windows Universal"
+  )
+  [System.IO.File]::WriteAllText($Path, $targets, [System.Text.UTF8Encoding]::new($false))
 }
 
-$targets = $targets.Replace($legacyReference, $currentReference)
-$targets = $targets.Replace(
-  "Microsoft Visual C++ 2013 Runtime Package for Windows Universal",
-  "Microsoft Visual C++ Runtime Package for Windows Universal"
-)
-[System.IO.File]::WriteAllText($targetsPath, $targets, [System.Text.UTF8Encoding]::new($false))
+Normalize-LibVlcTargets $targetsPath
+
+$globalPackagesRoot = if ($env:NUGET_PACKAGES) {
+  $env:NUGET_PACKAGES
+} else {
+  Join-Path $env:USERPROFILE ".nuget\packages"
+}
+$globalTargetsPath = Join-Path $globalPackagesRoot "videolan.libvlc.uwp\$Version\build\VideoLAN.LibVLC.UWP.targets"
+if (Test-Path -LiteralPath $globalTargetsPath -PathType Leaf) {
+  Normalize-LibVlcTargets $globalTargetsPath
+} elseif ($RequireGlobalPackage) {
+  throw "LibVLC UWP global package targets were not restored: $globalTargetsPath"
+}
 
 $mediaHeader = [System.IO.File]::ReadAllText($mediaHeaderPath)
 $ssizeCompatibility = @'

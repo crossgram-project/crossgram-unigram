@@ -190,13 +190,20 @@ jobs:
         shell: pwsh
         run: |
           $solutionDir = "${{ github.workspace }}\upstream\"
+          $commonProperties = @(
+            '/p:Configuration=Release'
+            '/p:Platform=x64'
+            '/p:PlatformToolset=v145'
+            "/p:SolutionDir=$solutionDir"
+            '/p:VcpkgRoot=${{ github.workspace }}\vcpkg\'
+          )
           msbuild upstream\Telegram.Msix\Telegram.Msix.wapproj `
-            /restore /m `
-            /p:Configuration=Release `
-            /p:Platform=x64 `
-            /p:PlatformToolset=v145 `
-            /p:SolutionDir="$solutionDir" `
-            /p:VcpkgRoot="${{ github.workspace }}\vcpkg\" `
+            /t:Restore @commonProperties
+          .\scripts\prepare-libvlc-package.ps1 `
+            -Source upstream `
+            -RequireGlobalPackage
+          msbuild upstream\Telegram.Msix\Telegram.Msix.wapproj `
+            /m @commonProperties `
             /p:UapAppxPackageBuildMode=SideloadOnly `
             /p:AppxBundlePlatforms=x64 `
             /p:AppxBundle=Always `
