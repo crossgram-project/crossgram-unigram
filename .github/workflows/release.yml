@@ -120,7 +120,7 @@ jobs:
             boost-regex:x64-uwp `
             libyuv:x64-uwp `
             lz4:x64-uwp `
-            zxing-cpp:x64-uwp
+            nu-book-zxing-cpp:x64-uwp
           .\vcpkg\vcpkg.exe integrate install
           nuget restore upstream\Telegram.Native\packages.config -PackagesDirectory upstream\packages
           .\scripts\prepare-libvlc-package.ps1 -Source upstream

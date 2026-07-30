@@ -15,7 +15,7 @@ describe("Windows release contract", () => {
     expect(workflow).toContain("ffmpeg:x64-uwp");
     expect(workflow).toContain("libyuv:x64-uwp");
     expect(workflow).toContain("lz4:x64-uwp");
-    expect(workflow).toContain("zxing-cpp:x64-uwp");
+    expect(workflow).toContain("nu-book-zxing-cpp:x64-uwp");
     expect(workflow).not.toContain("ffmpeg[dav1d,opus,vpx]:x64-uwp");
     expect(workflow).toContain("PSNativeCommandUseErrorActionPreference");
     expect(workflow).toContain("actions/cache/restore@v4");
