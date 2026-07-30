@@ -35,4 +35,12 @@ describe("Unigram server switch integration", () => {
     expect(patcher).toContain("CrossgramServerConfig.cpp");
     expect(patcher).toContain("CROSSGRAM_TDLIB_PATCHER");
   });
+
+  it("documents inherited bridge-media direct downloads", async () => {
+    const readme = await readFile(path.resolve("README.md"), "utf8");
+    expect(readme).toContain("bridge-media:");
+    expect(readme).toContain("crossgram.getFileUrl");
+    expect(readme).toContain("upload.getFile");
+    expect(readme).toContain("GitHub Releases");
+  });
 });

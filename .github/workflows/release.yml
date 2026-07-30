@@ -1,0 +1,209 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: GitHub Release tag
+        required: true
+        default: crossgram-unigram-v0.1.0
+      upstream_ref:
+        description: Unigram branch or tag
+        required: true
+        default: v12.8
+  push:
+    branches:
+      - codex/unigram-release
+    tags:
+      - crossgram-unigram-v*
+
+permissions:
+  contents: write
+
+concurrency:
+  group: crossgram-unigram-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  windows-x64:
+    runs-on: windows-2025
+    timeout-minutes: 180
+    env:
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}\vcpkg-cache
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: corepack enable
+      - run: yarn install --immutable
+      - run: yarn check
+
+      - name: Select upstream revision
+        id: upstream
+        shell: pwsh
+        run: |
+          $ref = '${{ inputs.upstream_ref }}'
+          if ([string]::IsNullOrWhiteSpace($ref)) {
+            $ref = 'v12.8'
+          }
+          "ref=$ref" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Clone Unigram with native sources
+        shell: pwsh
+        run: |
+          git clone --depth 1 --branch '${{ steps.upstream.outputs.ref }}' `
+            https://github.com/UnigramDev/Unigram.git upstream
+          git -C upstream submodule update --init --depth 1 -- `
+            Libraries/CoreWindowCustomDPI `
+            Libraries/MicroTeX `
+            Libraries/flatbuffers `
+            Libraries/libprisma `
+            Libraries/libutf `
+            Libraries/libwebp `
+            Libraries/tdlib
+
+      - name: Apply Crossgram Unigram patch
+        run: yarn patch:source --source upstream
+
+      - name: Prepare release identity and credentials
+        shell: pwsh
+        env:
+          TELEGRAM_API_ID: ${{ secrets.CROSSGRAM_TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.CROSSGRAM_TELEGRAM_API_HASH }}
+        run: |
+          $apiId = $env:TELEGRAM_API_ID
+          $apiHash = $env:TELEGRAM_API_HASH
+          if ([string]::IsNullOrWhiteSpace($apiId) -or [string]::IsNullOrWhiteSpace($apiHash)) {
+            $apiId = '1'
+            $apiHash = '00000000000000000000000000000000'
+            Add-Content $env:GITHUB_STEP_SUMMARY '> [!WARNING]'
+            Add-Content $env:GITHUB_STEP_SUMMARY '> Repository API credentials are absent. This artifact is usable with Crossgram custom servers; official Telegram login requires a rebuild with CROSSGRAM_TELEGRAM_API_ID and CROSSGRAM_TELEGRAM_API_HASH.'
+          }
+          .\scripts\prepare-release.ps1 -Source upstream -ApiId ([int]$apiId) -ApiHash $apiHash
+
+      - name: Clone direct-download TDLib patcher
+        shell: pwsh
+        run: |
+          git clone --depth 1 https://github.com/crossgram-project/crossgram-tdlib.git crossgram-tdlib
+          Push-Location crossgram-tdlib
+          corepack yarn install --immutable
+          corepack yarn check
+          Pop-Location
+
+      - uses: microsoft/setup-msbuild@v2
+      - uses: nuget/setup-nuget@v2
+      - name: Cache vcpkg packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            vcpkg-cache
+            vcpkg\downloads
+          key: unigram-vcpkg-${{ runner.os }}-x64-uwp-cff6ed4
+
+      - name: Install UWP native dependencies
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force $env:VCPKG_DEFAULT_BINARY_CACHE | Out-Null
+          git clone https://github.com/microsoft/vcpkg.git vcpkg
+          git -C vcpkg checkout cff6ed45719c0162fa7065fdac90506a0add812c
+          .\vcpkg\bootstrap-vcpkg.bat -disableMetrics
+          .\vcpkg\vcpkg.exe install openssl:x64-uwp zlib:x64-uwp ffmpeg:x64-uwp
+          .\vcpkg\vcpkg.exe integrate install
+          nuget restore upstream\Telegram.Native\packages.config -PackagesDirectory upstream\packages
+
+      - name: Build direct-download TDLib for UWP
+        shell: pwsh
+        env:
+          CROSSGRAM_TDLIB_PATCHER: ${{ github.workspace }}\crossgram-tdlib
+        run: |
+          & upstream\Libraries\tdjson\build.ps1 `
+            -vcpkg_root "${{ github.workspace }}\vcpkg" `
+            -arch x64
+          if (-not (Test-Path upstream\Libraries\tdjson\x64\tdjson.dll)) {
+            throw 'Patched tdjson.dll was not exported'
+          }
+          if (-not (Test-Path upstream\Libraries\tdlib\td\telegram\CrossgramDirectDownload.cpp)) {
+            throw 'Crossgram bridge-media direct download patch is missing from TDLib'
+          }
+
+      - name: Build signed sideload package
+        shell: pwsh
+        run: |
+          $solutionDir = "${{ github.workspace }}\upstream\"
+          msbuild upstream\Telegram.Msix\Telegram.Msix.wapproj `
+            /restore /m `
+            /p:Configuration=Release `
+            /p:Platform=x64 `
+            /p:PlatformToolset=v145 `
+            /p:SolutionDir="$solutionDir" `
+            /p:VcpkgRoot="${{ github.workspace }}\vcpkg\" `
+            /p:UapAppxPackageBuildMode=SideloadOnly `
+            /p:AppxBundlePlatforms=x64 `
+            /p:AppxBundle=Always `
+            /p:AppxPackageSigningEnabled=true `
+            /p:PackageCertificateKeyFile=Telegram.Msix_TemporaryKey.pfx
+
+      - name: Collect and verify release assets
+        shell: pwsh
+        run: |
+          $appPackages = Get-ChildItem upstream\Telegram.Msix\AppPackages -Directory | Select-Object -First 1
+          if ($null -eq $appPackages) {
+            throw 'MSBuild did not produce an AppPackages directory'
+          }
+          New-Item -ItemType Directory -Force release | Out-Null
+          Copy-Item $appPackages.FullName release\AppPackages -Recurse
+          $bundle = Get-ChildItem $appPackages.FullName -Recurse -File |
+            Where-Object { $_.Extension -in '.msixbundle', '.appxbundle', '.msix', '.appx' } |
+            Sort-Object Length -Descending |
+            Select-Object -First 1
+          if ($null -eq $bundle -or $bundle.Length -le 0) {
+            throw 'No non-empty installable package was produced'
+          }
+          Copy-Item $bundle.FullName release\Crossgram-Unigram-x64$($bundle.Extension)
+
+          $certificate = Get-PfxCertificate upstream\Telegram.Msix\Telegram.Msix_TemporaryKey.pfx
+          $certificateBytes = $certificate.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Cert)
+          [System.IO.File]::WriteAllBytes((Join-Path $PWD 'release\Crossgram-Unigram-Test.cer'), $certificateBytes)
+          Compress-Archive -Path release\AppPackages -DestinationPath release\Crossgram-Unigram-x64.zip
+
+          $hashLines = Get-ChildItem release -File | Sort-Object Name | ForEach-Object {
+            $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash  $($_.Name)"
+          }
+          [System.IO.File]::WriteAllLines(
+            (Join-Path $PWD 'release\SHA256SUMS.txt'),
+            $hashLines,
+            [System.Text.UTF8Encoding]::new($false)
+          )
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: crossgram-unigram-windows-x64
+          path: release/*
+          if-no-files-found: error
+
+      - name: Publish GitHub Release
+        if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag || github.ref_name }}
+          name: Crossgram Unigram ${{ inputs.tag || github.ref_name }}
+          target_commitish: ${{ github.sha }}
+          generate_release_notes: false
+          body: |
+            Windows x64 sideload build based on Unigram `${{ steps.upstream.outputs.ref }}`.
+
+            Includes per-account Crossgram server switching and shared TDLib `bridge-media:` direct downloads with validated HTTP Range responses and automatic relay fallback.
+
+            Download `Crossgram-Unigram-x64.zip`, extract it, and run the included `Add-AppDevPackage.ps1`. The package is test-signed; the ZIP includes the certificate and dependency packages.
+
+            If this repository has no Telegram API credential secrets configured, the binary is intended for Crossgram custom servers. Official Telegram login requires a build made with the maintainer's own API ID and hash.
+          files: |
+            release/Crossgram-Unigram-x64.zip
+            release/Crossgram-Unigram-x64.*bundle
+            release/Crossgram-Unigram-x64.msix
+            release/Crossgram-Unigram-x64.appx
+            release/Crossgram-Unigram-Test.cer
+            release/SHA256SUMS.txt
+          fail_on_unmatched_files: false

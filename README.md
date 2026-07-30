@@ -1,6 +1,7 @@
 # Crossgram Unigram patcher
 
-Crossgram Unigram adds per-account Crossgram server selection to current
+Crossgram Unigram adds per-account Crossgram server selection and direct
+`bridge-media:` downloads to current
 [Unigram](https://github.com/UnigramDev/Unigram) source and connects its bundled
 TDLib build to
 [crossgram-tdlib](https://github.com/crossgram-project/crossgram-tdlib).
@@ -23,6 +24,10 @@ large native dependencies outside this repository.
   keys and cached DC state from crossing server boundaries.
 - x_crossgram_server_configuration is sent and acknowledged before
   setTdlibParameters. A native rejection fails closed.
+- The patched TDLib resolves `bridge-media:` document and photo references
+  through `crossgram.getFileUrl`, downloads exact HTTP byte ranges directly,
+  and falls back to relay `upload.getFile` on any resolver, metadata, HTTP, or
+  range validation failure.
 
 The C# normalizer mirrors crossgram-tdlib: it fills missing DC IDs 1–5, creates
 a deterministic ID, produces canonical JSON, and derives the same database
@@ -52,7 +57,16 @@ Set-Location D:\src\Unigram\Libraries\tdjson
 ~~~
 
 The build script applies the shared TDLib source integration before CMake
-configuration and skips the operation when the source is already patched.
+configuration and skips the operation when the source is already patched. The
+shared integration contains both server switching and direct media downloads.
+
+## Download
+
+Installable x64 Windows packages are published in
+[GitHub Releases](https://github.com/crossgram-project/crossgram-unigram/releases).
+Download the release ZIP, extract it, and run `Add-AppDevPackage.ps1` from the
+extracted AppPackages directory. Windows may ask you to trust the included
+test-signing certificate for sideloading.
 
 ## Server JSON
 
