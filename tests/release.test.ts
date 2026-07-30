@@ -75,6 +75,9 @@ describe("Windows release contract", () => {
     expect(script).toContain("Constants.Secret.cs");
     expect(script).toContain("Telegram\\.Native\\.Calls");
     expect(script).toContain("ENABLE_CALLS;");
+    expect(script).toContain("NativeCallsStub.cs");
+    expect(script).toContain("namespace Telegram.Native.Calls");
+    expect(script).toContain("using System.Threading.Tasks;");
     expect(script).toContain('$libVlcVersion = "3.3.2"');
     expect(script).toContain("libvlc.lib;libvlccore.lib");
     expect(script).toContain("UTF8Encoding");
