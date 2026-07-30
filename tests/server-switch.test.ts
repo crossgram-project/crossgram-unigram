@@ -15,6 +15,8 @@ describe("Unigram server switch integration", () => {
     expect(callback).toBeGreaterThan(option);
     expect(parameters).toBeGreaterThan(callback);
     expect(patcher).toContain("if (optionResult is Error optionError)");
+    expect(patcher).toContain("AppRestartFailureReason.RestartPending");
+    expect(patcher).not.toContain("AppRestartFailureReason.None");
   });
 
   it("keeps official and custom databases isolated", async () => {

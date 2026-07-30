@@ -216,6 +216,7 @@ AppName = "Unigram"
     expect(nativeCallsStub).toContain("public sealed class VoipGroupManager");
     expect(nativeCallsStub).toContain("public sealed class VoipVideoOutputSink");
     expect(messageDelegate).toContain("using System.Threading.Tasks;");
+    expect(messageDelegate).toContain("using Windows.Storage;");
     expect(manifestScript.match(/CrossgramProject\.CrossgramUnigram/g)).toHaveLength(3);
     expect(manifestScript.match(/Crossgram Unigram/g)?.length).toBeGreaterThanOrEqual(6);
     expect(libVlcTargets).toContain('SDKReference Include="Microsoft.VCLibs, Version=14.0"');

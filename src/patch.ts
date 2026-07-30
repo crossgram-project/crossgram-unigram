@@ -157,7 +157,7 @@ export async function patchUnigram(root: string): Promise<PatchResult> {
             }
 
             var restart = await CoreApplication.RequestRestartAsync("crossgram-server-switch");
-            if (restart != AppRestartFailureReason.None)
+            if (restart != AppRestartFailureReason.RestartPending)
             {
                 await ShowPopupAsync(
                     "The server selection was saved. Restart Unigram manually to apply it.",

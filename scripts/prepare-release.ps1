@@ -393,6 +393,12 @@ if (-not $messageDelegate.Contains("using System.Threading.Tasks;")) {
     "using System.Linq;`r`nusing System.Threading.Tasks;"
   )
 }
+if (-not $messageDelegate.Contains("using Windows.Storage;")) {
+  $messageDelegate = $messageDelegate.Replace(
+    "using System.Threading.Tasks;",
+    "using System.Threading.Tasks;`r`nusing Windows.Storage;"
+  )
+}
 Write-Utf8NoBom $messageDelegatePath $messageDelegate
 
 # Unigram v12.8 pins a prerelease LibVLC UWP package that has been removed

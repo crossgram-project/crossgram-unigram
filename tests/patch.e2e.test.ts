@@ -60,6 +60,8 @@ describe("current Unigram source patch", () => {
     expect(parameters).toBeGreaterThan(option);
     expect(client).toContain("CrossgramServerConfigurationStore.DatabaseDirectory");
     expect(viewModel).toContain('RequestRestartAsync("crossgram-server-switch")');
+    expect(viewModel).toContain("AppRestartFailureReason.RestartPending");
+    expect(viewModel).not.toContain("AppRestartFailureReason.None");
     expect(build).toContain("corepack yarn patch:source --source");
   });
 });
