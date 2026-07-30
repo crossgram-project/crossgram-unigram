@@ -98,11 +98,13 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: vcpkg-cache
-          key: unigram-vcpkg-${{ runner.os }}-x64-uwp-cff6ed4-full-v2
+          key: unigram-vcpkg-${{ runner.os }}-x64-uwp-cff6ed4-full-v3
+          restore-keys: unigram-vcpkg-${{ runner.os }}-x64-uwp-cff6ed4-full-v2
 
       - name: Install UWP native dependencies
         shell: pwsh
         run: |
+          $PSNativeCommandUseErrorActionPreference = $true
           choco install gperf --yes --no-progress
           if (-not (Get-Command gperf.exe -ErrorAction SilentlyContinue)) {
             throw 'gperf.exe is required to generate TDLib sources'
@@ -112,12 +114,9 @@ jobs:
           git -C vcpkg checkout cff6ed45719c0162fa7065fdac90506a0add812c
           .\vcpkg\bootstrap-vcpkg.bat -disableMetrics
           .\vcpkg\vcpkg.exe install `
-            'ffmpeg[dav1d,opus,vpx]:x64-uwp' `
-            lz4:x64-uwp `
+            ffmpeg:x64-uwp `
             openssl:x64-uwp `
             zlib:x64-uwp `
-            libogg:x64-uwp `
-            opus:x64-uwp `
             boost-regex:x64-uwp
           .\vcpkg\vcpkg.exe integrate install
           nuget restore upstream\Telegram.Native\packages.config -PackagesDirectory upstream\packages
