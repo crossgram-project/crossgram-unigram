@@ -47,6 +47,9 @@ describe("Windows release contract", () => {
     expect(workflow).toContain("Apply direct-download TDLib source patch");
     expect(workflow).toContain('${{ github.workspace }}\\upstream\\Libraries\\tdlib');
     expect(workflow).toContain("Verify direct-download TDLib for UWP");
+    expect(workflow.match(/upstream\\Libraries\\tdjson\\td_api\.tl/g)).toHaveLength(3);
+    expect(workflow).toContain("Generated TDLib API scheme was not exported");
+    expect(workflow).toContain("a48b04575e41-v2");
     expect(workflow).toContain("Push-Location upstream\\Libraries\\tdjson");
     expect(workflow).toContain("& .\\build.ps1");
     expect(workflow).toContain("Telegram.Msix\\Telegram.Msix.wapproj");

@@ -153,8 +153,10 @@ jobs:
         id: tdlib-cache
         uses: actions/cache/restore@v4
         with:
-          path: upstream\Libraries\tdjson\x64
-          key: unigram-tdjson-${{ runner.os }}-v143-${{ steps.upstream.outputs.ref }}-a48b04575e41
+          path: |
+            upstream\Libraries\tdjson\x64
+            upstream\Libraries\tdjson\td_api.tl
+          key: unigram-tdjson-${{ runner.os }}-v143-${{ steps.upstream.outputs.ref }}-a48b04575e41-v2
 
       - name: Build direct-download TDLib for UWP
         if: steps.tdlib-cache.outputs.cache-hit != 'true'
@@ -176,6 +178,9 @@ jobs:
           if (-not (Test-Path upstream\Libraries\tdjson\x64\tdjson.dll)) {
             throw 'Patched tdjson.dll was not exported'
           }
+          if (-not (Test-Path upstream\Libraries\tdjson\td_api.tl)) {
+            throw 'Generated TDLib API scheme was not exported'
+          }
           if (-not (Test-Path upstream\Libraries\tdlib\td\telegram\CrossgramDirectDownload.cpp)) {
             throw 'Crossgram bridge-media direct download patch is missing from TDLib'
           }
@@ -184,7 +189,9 @@ jobs:
         if: steps.tdlib-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
-          path: upstream\Libraries\tdjson\x64
+          path: |
+            upstream\Libraries\tdjson\x64
+            upstream\Libraries\tdjson\td_api.tl
           key: ${{ steps.tdlib-cache.outputs.cache-primary-key }}
 
       - name: Build signed sideload package
