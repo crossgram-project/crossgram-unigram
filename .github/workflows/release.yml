@@ -115,6 +115,7 @@ jobs:
           .\vcpkg\vcpkg.exe install openssl:x64-uwp zlib:x64-uwp ffmpeg:x64-uwp
           .\vcpkg\vcpkg.exe integrate install
           nuget restore upstream\Telegram.Native\packages.config -PackagesDirectory upstream\packages
+          .\scripts\prepare-libvlc-package.ps1 -Source upstream
 
       - name: Build direct-download TDLib for UWP
         shell: pwsh

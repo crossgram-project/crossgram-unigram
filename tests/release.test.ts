@@ -10,6 +10,7 @@ describe("Windows release contract", () => {
     expect(workflow).not.toContain("--recurse-submodules");
     expect(workflow).toContain("choco install gperf --yes --no-progress");
     expect(workflow).toContain("Get-Command gperf.exe");
+    expect(workflow).toContain("prepare-libvlc-package.ps1 -Source upstream");
     expect(workflow).toContain("Push-Location upstream\\Libraries\\tdjson");
     expect(workflow).toContain("& .\\build.ps1");
     expect(workflow).toContain("Telegram.Msix\\Telegram.Msix.wapproj");
@@ -26,6 +27,13 @@ describe("Windows release contract", () => {
     expect(script).toContain("ENABLE_CALLS;");
     expect(script).toContain('$libVlcVersion = "3.3.2"');
     expect(script).toContain("libvlc.lib;libvlccore.lib");
+    expect(script).toContain("UTF8Encoding");
+  });
+
+  it("normalizes the restored LibVLC runtime SDK reference", async () => {
+    const script = await readFile(path.resolve("scripts/prepare-libvlc-package.ps1"), "utf8");
+    expect(script).toContain("Microsoft.VCLibs.120, Version=14.0");
+    expect(script).toContain("Microsoft.VCLibs, Version=14.0");
     expect(script).toContain("UTF8Encoding");
   });
 });

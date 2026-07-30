@@ -19,6 +19,10 @@ describe("release source preparation", () => {
     root = await mkdtemp(path.join(os.tmpdir(), "crossgram-unigram-release-"));
     await mkdir(path.join(root, "Telegram"), { recursive: true });
     await mkdir(path.join(root, "Telegram.Native"), { recursive: true });
+    await mkdir(
+      path.join(root, "packages", "VideoLAN.LibVLC.UWP.3.3.2", "build"),
+      { recursive: true },
+    );
     await writeFile(
       path.join(root, "Telegram", "Telegram.csproj"),
       `<Project>
@@ -81,6 +85,23 @@ AppName = "Unigram"
 }`,
       "utf8",
     );
+    await writeFile(
+      path.join(
+        root,
+        "packages",
+        "VideoLAN.LibVLC.UWP.3.3.2",
+        "build",
+        "VideoLAN.LibVLC.UWP.targets",
+      ),
+      `<Project>
+  <ItemGroup>
+    <SDKReference Include="Microsoft.VCLibs.120, Version=14.0">
+      <Name>Microsoft Visual C++ 2013 Runtime Package for Windows Universal</Name>
+    </SDKReference>
+  </ItemGroup>
+</Project>`,
+      "utf8",
+    );
 
     const powershell = process.platform === "win32" ? "powershell" : "pwsh";
     await execFileAsync(powershell, [
@@ -94,12 +115,29 @@ AppName = "Unigram"
       "-ApiHash",
       "0123456789abcdef0123456789abcdef",
     ]);
+    await execFileAsync(powershell, [
+      "-NoProfile",
+      "-File",
+      path.resolve("scripts/prepare-libvlc-package.ps1"),
+      "-Source",
+      root,
+    ]);
 
     const project = await readFile(path.join(root, "Telegram", "Telegram.csproj"), "utf8");
     const nativePackages = await readFile(path.join(root, "Telegram.Native", "packages.config"), "utf8");
     const nativeProject = await readFile(path.join(root, "Telegram.Native", "Telegram.Native.vcxproj"), "utf8");
     const secret = await readFile(path.join(root, "Telegram", "Constants.Secret.cs"), "utf8");
     const manifestScript = await readFile(path.join(root, "UpdateManifest.ps1"), "utf8");
+    const libVlcTargets = await readFile(
+      path.join(
+        root,
+        "packages",
+        "VideoLAN.LibVLC.UWP.3.3.2",
+        "build",
+        "VideoLAN.LibVLC.UWP.targets",
+      ),
+      "utf8",
+    );
     expect(project).not.toContain("ENABLE_CALLS");
     expect(project).not.toContain("Telegram.Native.Calls");
     expect(project).toContain("<Version>3.3.2</Version>");
@@ -113,5 +151,7 @@ AppName = "Unigram"
     expect(secret).toContain('ApiHash = "0123456789abcdef0123456789abcdef";');
     expect(manifestScript.match(/CrossgramProject\.CrossgramUnigram/g)).toHaveLength(3);
     expect(manifestScript.match(/Crossgram Unigram/g)?.length).toBeGreaterThanOrEqual(6);
+    expect(libVlcTargets).toContain('SDKReference Include="Microsoft.VCLibs, Version=14.0"');
+    expect(libVlcTargets).not.toContain("Microsoft.VCLibs.120");
   });
 });
