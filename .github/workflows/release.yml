@@ -26,7 +26,7 @@ concurrency:
 
 jobs:
   windows-x64:
-    runs-on: windows-2025
+    runs-on: windows-2022
     timeout-minutes: 180
     env:
       VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}\vcpkg-cache
@@ -108,8 +108,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: vcpkg-cache
-          key: unigram-vcpkg-${{ runner.os }}-x64-uwp-cff6ed4-cmake331-full-v9
-          restore-keys: unigram-vcpkg-${{ runner.os }}-x64-uwp-cff6ed4-cmake331-full-v8
+          key: unigram-vcpkg-${{ runner.os }}-x64-uwp-v143-cff6ed4-cmake331-full-v10
 
       - name: Install UWP native dependencies
         shell: pwsh
@@ -153,7 +152,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: upstream\Libraries\tdjson\x64
-          key: unigram-tdjson-${{ runner.os }}-${{ steps.upstream.outputs.ref }}-a48b04575e41
+          key: unigram-tdjson-${{ runner.os }}-v143-${{ steps.upstream.outputs.ref }}-a48b04575e41
 
       - name: Build direct-download TDLib for UWP
         if: steps.tdlib-cache.outputs.cache-hit != 'true'
@@ -193,7 +192,7 @@ jobs:
           $commonProperties = @(
             '/p:Configuration=Release'
             '/p:Platform=x64'
-            '/p:PlatformToolset=v145'
+            '/p:PlatformToolset=v143'
             "/p:SolutionDir=$solutionDir"
             '/p:VcpkgRoot=${{ github.workspace }}\vcpkg\'
           )
