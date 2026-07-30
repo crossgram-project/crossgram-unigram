@@ -117,9 +117,14 @@ jobs:
         env:
           CROSSGRAM_TDLIB_PATCHER: ${{ github.workspace }}\crossgram-tdlib
         run: |
-          & upstream\Libraries\tdjson\build.ps1 `
-            -vcpkg_root "${{ github.workspace }}\vcpkg" `
-            -arch x64
+          Push-Location upstream\Libraries\tdjson
+          try {
+            & .\build.ps1 `
+              -vcpkg_root "${{ github.workspace }}\vcpkg" `
+              -arch x64
+          } finally {
+            Pop-Location
+          }
           if (-not (Test-Path upstream\Libraries\tdjson\x64\tdjson.dll)) {
             throw 'Patched tdjson.dll was not exported'
           }
