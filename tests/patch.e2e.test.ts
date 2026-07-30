@@ -39,7 +39,6 @@ describe("current Unigram source patch", () => {
       "Libraries/tdjson/build.ps1",
       "Telegram/Crossgram/CrossgramServerConfiguration.cs",
       "Telegram/Crossgram/CrossgramServerConfigurationStore.cs",
-      "Telegram/Crossgram/ServerConfigurationPopup.xaml",
       "Telegram/Crossgram/ServerConfigurationPopup.xaml.cs",
       "Telegram/Services/ClientService.cs",
       "Telegram/Telegram.csproj",

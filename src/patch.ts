@@ -94,7 +94,6 @@ export async function patchUnigram(root: string): Promise<PatchResult> {
   for (const relative of [
     "Telegram/Crossgram/CrossgramServerConfiguration.cs",
     "Telegram/Crossgram/CrossgramServerConfigurationStore.cs",
-    "Telegram/Crossgram/ServerConfigurationPopup.xaml",
     "Telegram/Crossgram/ServerConfigurationPopup.xaml.cs",
   ]) {
     await installFile(root, relative, changedFiles);
@@ -191,27 +190,14 @@ export async function patchUnigram(root: string): Promise<PatchResult> {
     ));
 
   await editFile(root, "Telegram/Telegram.csproj", changedFiles, (source) => {
-    source = insertBeforeOnce(
+    return insertBeforeOnce(
       source,
       '    <Compile Include="Views\\Settings\\SettingsProxyPopup.xaml.cs">',
       `    <Compile Include="Crossgram\\CrossgramServerConfiguration.cs" />
     <Compile Include="Crossgram\\CrossgramServerConfigurationStore.cs" />
-    <Compile Include="Crossgram\\ServerConfigurationPopup.xaml.cs">
-      <DependentUpon>ServerConfigurationPopup.xaml</DependentUpon>
-    </Compile>
+    <Compile Include="Crossgram\\ServerConfigurationPopup.xaml.cs" />
 `,
       'Compile Include="Crossgram\\CrossgramServerConfiguration.cs"',
-      "Telegram/Telegram.csproj",
-    );
-    return insertBeforeOnce(
-      source,
-      '    <Page Include="Views\\Settings\\SettingsProxyPopup.xaml">',
-      `    <Page Include="Crossgram\\ServerConfigurationPopup.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-`,
-      'Page Include="Crossgram\\ServerConfigurationPopup.xaml"',
       "Telegram/Telegram.csproj",
     );
   });
