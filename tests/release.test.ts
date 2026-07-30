@@ -11,6 +11,12 @@ describe("Windows release contract", () => {
     expect(workflow).toContain("choco install gperf --yes --no-progress");
     expect(workflow).toContain("Get-Command gperf.exe");
     expect(workflow).toContain("prepare-libvlc-package.ps1 -Source upstream");
+    expect(workflow).toContain("boost-regex:x64-uwp");
+    expect(workflow).toContain("ffmpeg[dav1d,opus,vpx]:x64-uwp");
+    expect(workflow).toContain("actions/cache/restore@v4");
+    expect(workflow).toContain("actions/cache/save@v4");
+    expect(workflow).toContain("Apply direct-download TDLib source patch");
+    expect(workflow).toContain("Verify direct-download TDLib for UWP");
     expect(workflow).toContain("Push-Location upstream\\Libraries\\tdjson");
     expect(workflow).toContain("& .\\build.ps1");
     expect(workflow).toContain("Telegram.Msix\\Telegram.Msix.wapproj");

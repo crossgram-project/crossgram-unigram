@@ -93,13 +93,14 @@ jobs:
 
       - uses: microsoft/setup-msbuild@v2
       - uses: nuget/setup-nuget@v2
-      - name: Cache vcpkg packages
-        uses: actions/cache@v4
+      - name: Restore vcpkg packages
+        id: vcpkg-cache
+        uses: actions/cache/restore@v4
         with:
           path: |
             vcpkg-cache
             vcpkg\downloads
-          key: unigram-vcpkg-${{ runner.os }}-x64-uwp-cff6ed4
+          key: unigram-vcpkg-${{ runner.os }}-x64-uwp-cff6ed4-full-v1
 
       - name: Install UWP native dependencies
         shell: pwsh
@@ -112,12 +113,40 @@ jobs:
           git clone https://github.com/microsoft/vcpkg.git vcpkg
           git -C vcpkg checkout cff6ed45719c0162fa7065fdac90506a0add812c
           .\vcpkg\bootstrap-vcpkg.bat -disableMetrics
-          .\vcpkg\vcpkg.exe install openssl:x64-uwp zlib:x64-uwp ffmpeg:x64-uwp
+          .\vcpkg\vcpkg.exe install `
+            'ffmpeg[dav1d,opus,vpx]:x64-uwp' `
+            lz4:x64-uwp `
+            openssl:x64-uwp `
+            zlib:x64-uwp `
+            libogg:x64-uwp `
+            opus:x64-uwp `
+            boost-regex:x64-uwp
           .\vcpkg\vcpkg.exe integrate install
           nuget restore upstream\Telegram.Native\packages.config -PackagesDirectory upstream\packages
           .\scripts\prepare-libvlc-package.ps1 -Source upstream
 
+      - name: Save vcpkg packages
+        if: steps.vcpkg-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            vcpkg-cache
+            vcpkg\downloads
+          key: ${{ steps.vcpkg-cache.outputs.cache-primary-key }}
+
+      - name: Apply direct-download TDLib source patch
+        shell: pwsh
+        run: corepack yarn --cwd crossgram-tdlib patch:source --source upstream\Libraries\tdlib
+
+      - name: Restore direct-download TDLib cache
+        id: tdlib-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: upstream\Libraries\tdjson\x64
+          key: unigram-tdjson-${{ runner.os }}-${{ steps.upstream.outputs.ref }}-a48b04575e41
+
       - name: Build direct-download TDLib for UWP
+        if: steps.tdlib-cache.outputs.cache-hit != 'true'
         shell: pwsh
         env:
           CROSSGRAM_TDLIB_PATCHER: ${{ github.workspace }}\crossgram-tdlib
@@ -130,12 +159,22 @@ jobs:
           } finally {
             Pop-Location
           }
+      - name: Verify direct-download TDLib for UWP
+        shell: pwsh
+        run: |
           if (-not (Test-Path upstream\Libraries\tdjson\x64\tdjson.dll)) {
             throw 'Patched tdjson.dll was not exported'
           }
           if (-not (Test-Path upstream\Libraries\tdlib\td\telegram\CrossgramDirectDownload.cpp)) {
             throw 'Crossgram bridge-media direct download patch is missing from TDLib'
           }
+
+      - name: Save direct-download TDLib cache
+        if: steps.tdlib-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: upstream\Libraries\tdjson\x64
+          key: ${{ steps.tdlib-cache.outputs.cache-primary-key }}
 
       - name: Build signed sideload package
         shell: pwsh
