@@ -41,6 +41,7 @@ describe("Windows release contract", () => {
     expect(workflow).toContain("runs-on: windows-2022");
     expect(workflow).toContain("x64-uwp-v143-cff6ed4-cmake331-full-v10");
     expect(workflow).toContain("/p:PlatformToolset=v143");
+    expect(workflow).toContain("/p:LangVersion=preview");
     expect(workflow).not.toContain("PlatformToolset=v145");
     expect(workflow).not.toContain("vcpkg\\downloads");
     expect(workflow).toContain("Apply direct-download TDLib source patch");

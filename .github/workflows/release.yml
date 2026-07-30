@@ -199,6 +199,7 @@ jobs:
             '/p:Configuration=Release'
             '/p:Platform=x64'
             '/p:PlatformToolset=v143'
+            '/p:LangVersion=preview'
             "/p:SolutionDir=$solutionDir"
             '/p:VcpkgRoot=${{ github.workspace }}\vcpkg\'
           )
