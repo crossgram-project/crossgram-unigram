@@ -46,6 +46,13 @@ namespace Windows.UI.Xaml
     {
         Programmatic,
     }
+
+    public readonly struct Thickness
+    {
+        public Thickness(double left, double top, double right, double bottom)
+        {
+        }
+    }
 }
 
 namespace Windows.UI.Xaml.Controls
@@ -62,6 +69,13 @@ namespace Windows.UI.Xaml.Controls
     public sealed class TextBox
     {
         public string Text { get; set; } = string.Empty;
+        public bool AcceptsReturn { get; set; }
+        public TextWrapping TextWrapping { get; set; }
+        public bool IsSpellCheckEnabled { get; set; }
+        public bool IsTextPredictionEnabled { get; set; }
+        public double MinHeight { get; set; }
+        public double MaxHeight { get; set; }
+        public string PlaceholderText { get; set; } = string.Empty;
         public void Focus(FocusState state)
         {
         }
@@ -71,6 +85,20 @@ namespace Windows.UI.Xaml.Controls
     {
         public string Text { get; set; } = string.Empty;
         public Visibility Visibility { get; set; }
+        public TextWrapping TextWrapping { get; set; }
+        public Thickness Margin { get; set; }
+    }
+
+    public enum TextWrapping
+    {
+        NoWrap,
+        Wrap,
+    }
+
+    public sealed class StackPanel
+    {
+        public double Width { get; set; }
+        public IList<object> Children { get; } = new List<object>();
     }
 }
 
@@ -81,18 +109,8 @@ namespace Telegram.Controls
         public string PrimaryButtonText { get; set; }
         public string SecondaryButtonText { get; set; }
         public string CloseButtonText { get; set; }
-    }
-}
-
-namespace Telegram.Crossgram
-{
-    public sealed partial class ServerConfigurationPopup
-    {
-        private readonly TextBox ConfigurationInput = new();
-        private readonly TextBlock ErrorText = new();
-
-        private void InitializeComponent()
-        {
-        }
+        public Thickness Padding { get; set; }
+        public object Content { get; set; }
+        public event System.Action<ContentDialog, ContentDialogButtonClickEventArgs> PrimaryButtonClick;
     }
 }

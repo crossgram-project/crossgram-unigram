@@ -39,7 +39,6 @@ describe("current Unigram source patch", () => {
       "Libraries/tdjson/build.ps1",
       "Telegram/Crossgram/CrossgramServerConfiguration.cs",
       "Telegram/Crossgram/CrossgramServerConfigurationStore.cs",
-      "Telegram/Crossgram/ServerConfigurationPopup.xaml",
       "Telegram/Crossgram/ServerConfigurationPopup.xaml.cs",
       "Telegram/Services/ClientService.cs",
       "Telegram/Telegram.csproj",
@@ -61,6 +60,8 @@ describe("current Unigram source patch", () => {
     expect(parameters).toBeGreaterThan(option);
     expect(client).toContain("CrossgramServerConfigurationStore.DatabaseDirectory");
     expect(viewModel).toContain('RequestRestartAsync("crossgram-server-switch")');
+    expect(viewModel).toContain("AppRestartFailureReason.RestartPending");
+    expect(viewModel).not.toContain("AppRestartFailureReason.None");
     expect(build).toContain("corepack yarn patch:source --source");
   });
 });

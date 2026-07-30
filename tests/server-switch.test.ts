@@ -15,6 +15,8 @@ describe("Unigram server switch integration", () => {
     expect(callback).toBeGreaterThan(option);
     expect(parameters).toBeGreaterThan(callback);
     expect(patcher).toContain("if (optionResult is Error optionError)");
+    expect(patcher).toContain("AppRestartFailureReason.RestartPending");
+    expect(patcher).not.toContain("AppRestartFailureReason.None");
   });
 
   it("keeps official and custom databases isolated", async () => {
@@ -34,5 +36,13 @@ describe("Unigram server switch integration", () => {
     expect(patcher).toContain("corepack yarn patch:source --source");
     expect(patcher).toContain("CrossgramServerConfig.cpp");
     expect(patcher).toContain("CROSSGRAM_TDLIB_PATCHER");
+  });
+
+  it("documents inherited bridge-media direct downloads", async () => {
+    const readme = await readFile(path.resolve("README.md"), "utf8");
+    expect(readme).toContain("bridge-media:");
+    expect(readme).toContain("crossgram.getFileUrl");
+    expect(readme).toContain("upload.getFile");
+    expect(readme).toContain("GitHub Releases");
   });
 });

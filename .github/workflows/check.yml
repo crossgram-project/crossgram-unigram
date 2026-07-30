@@ -58,4 +58,4 @@ jobs:
             exit 1
           }
           [xml](Get-Content upstream/Telegram/Telegram.csproj -Raw -Encoding utf8) | Out-Null
-          [xml](Get-Content upstream/Telegram/Crossgram/ServerConfigurationPopup.xaml -Raw -Encoding utf8) | Out-Null
+          Get-Content upstream/Telegram/Crossgram/ServerConfigurationPopup.xaml.cs -Raw -Encoding utf8 | Out-Null
