@@ -188,6 +188,7 @@ jobs:
       - name: Build signed sideload package
         shell: pwsh
         run: |
+          $env:MSBUILDDISABLENODEREUSE = '1'
           $solutionDir = "${{ github.workspace }}\upstream\"
           $commonProperties = @(
             '/p:Configuration=Release'
@@ -202,7 +203,9 @@ jobs:
             -Source upstream `
             -RequireGlobalPackage
           msbuild upstream\Telegram.Msix\Telegram.Msix.wapproj `
-            /m @commonProperties `
+            /m:1 @commonProperties `
+            /p:BuildInParallel=false `
+            /p:UseSharedCompilation=false `
             /p:UapAppxPackageBuildMode=SideloadOnly `
             /p:AppxBundlePlatforms=x64 `
             /p:AppxBundle=Always `

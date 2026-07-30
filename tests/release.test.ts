@@ -44,6 +44,10 @@ describe("Windows release contract", () => {
     expect(workflow).toContain("& .\\build.ps1");
     expect(workflow).toContain("Telegram.Msix\\Telegram.Msix.wapproj");
     expect(workflow).toContain("/t:Restore @commonProperties");
+    expect(workflow).toContain("$env:MSBUILDDISABLENODEREUSE = '1'");
+    expect(workflow).toContain("/m:1 @commonProperties");
+    expect(workflow).toContain("/p:BuildInParallel=false");
+    expect(workflow).toContain("/p:UseSharedCompilation=false");
     expect(workflow).toContain("-RequireGlobalPackage");
     expect(workflow).not.toContain("/restore /m");
     expect(workflow).toContain("AppPackages");
