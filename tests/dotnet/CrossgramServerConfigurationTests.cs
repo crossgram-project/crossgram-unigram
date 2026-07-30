@@ -9,7 +9,7 @@ namespace Crossgram.Unigram.Tests;
 
 public sealed class CrossgramServerConfigurationTests
 {
-    private const string RsaKey = """
+    private static readonly string RsaKey = """
 -----BEGIN RSA PUBLIC KEY-----
 MIIBCgKCAQEA6LszBcC1LGzyr992NzE0ieY+BSaOW622Aa9Bd4ZHLl+TuFQ4lo4g
 5nKaMBwK/BIb9xUfg0Q29/2mgIR6Zr9krM7HjuIcCzFvDtr+L0GQjae9H0pRB2OO
@@ -18,7 +18,7 @@ MIIBCgKCAQEA6LszBcC1LGzyr992NzE0ieY+BSaOW622Aa9Bd4ZHLl+TuFQ4lo4g
 t6N/byY9Nw9p21Og3AoXSL2q/2IJ1WRUhebgAdGVMlV1fkuOQoEzR7EdpqtQD9Cs
 5+bfo3Nhmcyvk5ftB0WkJ9z6bNZ7yxrP8wIDAQAB
 -----END RSA PUBLIC KEY-----
-""";
+""".ReplaceLineEndings("\n");
 
     [Fact]
     public void MatchesSharedCrossLanguageVector()
