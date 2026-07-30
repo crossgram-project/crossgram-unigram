@@ -3,6 +3,12 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 describe("Windows release contract", () => {
+  it("checks the code-built server popup without expecting a XAML file", async () => {
+    const workflow = await readFile(path.resolve(".github/workflows/check.yml"), "utf8");
+    expect(workflow).toContain("ServerConfigurationPopup.xaml.cs");
+    expect(workflow).not.toContain("ServerConfigurationPopup.xaml -Raw");
+  });
+
   it("builds patched TDLib and publishes installable assets", async () => {
     const workflow = await readFile(path.resolve(".github/workflows/release.yml"), "utf8");
     expect(workflow).toContain("crossgram-project/crossgram-tdlib");
