@@ -18,11 +18,13 @@ describe("Windows release contract", () => {
     expect(workflow).toContain("nu-book-zxing-cpp:x64-uwp");
     expect(workflow).toContain("opus:x64-uwp");
     expect(workflow).toContain("libogg:x64-uwp");
+    expect(workflow).toContain("lukka/get-cmake@latest");
+    expect(workflow).toContain("cmakeVersion: ~3.31.0");
     expect(workflow).not.toContain("ffmpeg[dav1d,opus,vpx]:x64-uwp");
     expect(workflow).toContain("PSNativeCommandUseErrorActionPreference");
     expect(workflow).toContain("actions/cache/restore@v4");
     expect(workflow).toContain("actions/cache/save@v4");
-    expect(workflow).toContain("x64-uwp-cff6ed4-full-v8");
+    expect(workflow).toContain("x64-uwp-cff6ed4-cmake331-full-v9");
     expect(workflow).not.toContain("vcpkg\\downloads");
     expect(workflow).toContain("Apply direct-download TDLib source patch");
     expect(workflow).toContain('${{ github.workspace }}\\upstream\\Libraries\\tdlib');
