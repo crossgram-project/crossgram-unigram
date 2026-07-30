@@ -16,6 +16,7 @@ describe("Windows release contract", () => {
     expect(workflow).toContain("actions/cache/restore@v4");
     expect(workflow).toContain("actions/cache/save@v4");
     expect(workflow).toContain("Apply direct-download TDLib source patch");
+    expect(workflow).toContain('${{ github.workspace }}\\upstream\\Libraries\\tdlib');
     expect(workflow).toContain("Verify direct-download TDLib for UWP");
     expect(workflow).toContain("Push-Location upstream\\Libraries\\tdjson");
     expect(workflow).toContain("& .\\build.ps1");

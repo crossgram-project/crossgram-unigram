@@ -136,7 +136,7 @@ jobs:
 
       - name: Apply direct-download TDLib source patch
         shell: pwsh
-        run: corepack yarn --cwd crossgram-tdlib patch:source --source upstream\Libraries\tdlib
+        run: corepack yarn --cwd crossgram-tdlib patch:source --source "${{ github.workspace }}\upstream\Libraries\tdlib"
 
       - name: Restore direct-download TDLib cache
         id: tdlib-cache
