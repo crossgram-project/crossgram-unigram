@@ -8,6 +8,8 @@ describe("Windows release contract", () => {
     expect(workflow).toContain("crossgram-project/crossgram-tdlib");
     expect(workflow).toContain("Libraries/CoreWindowCustomDPI");
     expect(workflow).not.toContain("--recurse-submodules");
+    expect(workflow).toContain("choco install gperf --yes --no-progress");
+    expect(workflow).toContain("Get-Command gperf.exe");
     expect(workflow).toContain("Push-Location upstream\\Libraries\\tdjson");
     expect(workflow).toContain("& .\\build.ps1");
     expect(workflow).toContain("Telegram.Msix\\Telegram.Msix.wapproj");

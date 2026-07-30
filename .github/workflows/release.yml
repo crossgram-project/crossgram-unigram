@@ -104,6 +104,10 @@ jobs:
       - name: Install UWP native dependencies
         shell: pwsh
         run: |
+          choco install gperf --yes --no-progress
+          if (-not (Get-Command gperf.exe -ErrorAction SilentlyContinue)) {
+            throw 'gperf.exe is required to generate TDLib sources'
+          }
           New-Item -ItemType Directory -Force $env:VCPKG_DEFAULT_BINARY_CACHE | Out-Null
           git clone https://github.com/microsoft/vcpkg.git vcpkg
           git -C vcpkg checkout cff6ed45719c0162fa7065fdac90506a0add812c
