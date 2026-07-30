@@ -98,8 +98,8 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: vcpkg-cache
-          key: unigram-vcpkg-${{ runner.os }}-x64-uwp-cff6ed4-full-v3
-          restore-keys: unigram-vcpkg-${{ runner.os }}-x64-uwp-cff6ed4-full-v2
+          key: unigram-vcpkg-${{ runner.os }}-x64-uwp-cff6ed4-full-v4
+          restore-keys: unigram-vcpkg-${{ runner.os }}-x64-uwp-cff6ed4-full-v3
 
       - name: Install UWP native dependencies
         shell: pwsh
@@ -117,7 +117,8 @@ jobs:
             ffmpeg:x64-uwp `
             openssl:x64-uwp `
             zlib:x64-uwp `
-            boost-regex:x64-uwp
+            boost-regex:x64-uwp `
+            libyuv:x64-uwp
           .\vcpkg\vcpkg.exe integrate install
           nuget restore upstream\Telegram.Native\packages.config -PackagesDirectory upstream\packages
           .\scripts\prepare-libvlc-package.ps1 -Source upstream

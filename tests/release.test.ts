@@ -13,11 +13,12 @@ describe("Windows release contract", () => {
     expect(workflow).toContain("prepare-libvlc-package.ps1 -Source upstream");
     expect(workflow).toContain("boost-regex:x64-uwp");
     expect(workflow).toContain("ffmpeg:x64-uwp");
+    expect(workflow).toContain("libyuv:x64-uwp");
     expect(workflow).not.toContain("ffmpeg[dav1d,opus,vpx]:x64-uwp");
     expect(workflow).toContain("PSNativeCommandUseErrorActionPreference");
     expect(workflow).toContain("actions/cache/restore@v4");
     expect(workflow).toContain("actions/cache/save@v4");
-    expect(workflow).toContain("x64-uwp-cff6ed4-full-v3");
+    expect(workflow).toContain("x64-uwp-cff6ed4-full-v4");
     expect(workflow).not.toContain("vcpkg\\downloads");
     expect(workflow).toContain("Apply direct-download TDLib source patch");
     expect(workflow).toContain('${{ github.workspace }}\\upstream\\Libraries\\tdlib');
