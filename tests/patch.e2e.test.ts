@@ -64,6 +64,8 @@ describe("current Unigram source patch", () => {
     const parameters = client.indexOf("new SetTdlibParameters(", option);
     expect(option).toBeGreaterThan(-1);
     expect(parameters).toBeGreaterThan(option);
+    expect(client.slice(option, parameters)).not.toContain("optionResult =>");
+    expect(client).toContain("would deadlock startup and leave the root frame black");
     expect(client).toContain("CrossgramServerConfigurationStore.DatabaseDirectory");
     expect(tdClient).toContain("private static extern unsafe void td_send(int client_id, byte* request);");
     expect(tdClient).toContain("private static extern unsafe byte* td_receive(double timeout);");
