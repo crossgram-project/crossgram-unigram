@@ -12,5 +12,9 @@ describe("TDLib JSON ABI runtime smoke test", () => {
     expect(script).toContain('response.get("@client_id") != client_id');
     expect(script).toContain('response.get("@type") != "optionValueString"');
     expect(script).toContain("TDLib did not echo numeric @extra routing metadata");
+    expect(script).toContain('"name": "x_crossgram_server_configuration"');
+    expect(script).toContain('"@type": "setTdlibParameters"');
+    expect(script).toContain("Sending both without awaiting the first response");
+    expect(script).toContain("TDLib did not acknowledge queued startup requests");
   });
 });

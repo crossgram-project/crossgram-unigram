@@ -61,34 +61,29 @@ const parametersReplacement = `                var crossgramConfiguration = Cros
                     ? new OptionValueEmpty()
                     : new OptionValueString(crossgramConfiguration.Serialize());
 
+                // TDLib processes these requests in order, but doesn't resolve SetOption
+                // until SetTdlibParameters completes initialization. Waiting for the option
+                // callback here would deadlock startup and leave the root frame black.
                 _client.Send(new SetOption(
                     CrossgramServerConfiguration.TdlibOptionName,
-                    crossgramOptionValue), optionResult =>
-                {
-                    if (optionResult is Error optionError)
-                    {
-                        Logger.Error(Environment.StackTrace, new InvalidOperationException(
-                            $"Crossgram server configuration was rejected: {optionError.Message}"));
-                        return;
-                    }
+                    crossgramOptionValue));
 
-                    _client.Send(new SetTdlibParameters(
-                        useTestDc: _settings.UseTestDC,
-                        databaseDirectory: databaseDirectory,
-                        filesDirectory: string.Empty,
-                        databaseEncryptionKey: null,
-                        useFileDatabase: true,
-                        useChatInfoDatabase: true,
-                        useMessageDatabase: useMessageDatabase,
-                        useSecretChats: true,
-                        apiId: Constants.ApiId,
-                        apiHash: Constants.ApiHash,
-                        systemLanguageCode: _deviceInfoService.SystemLanguageCode,
-                        deviceModel: deviceModel,
-                        systemVersion: _deviceInfoService.SystemVersion,
-                        applicationVersion: _deviceInfoService.ApplicationVersion));
-                    Send(new GetApplicationConfig(), UpdateConfig);
-                });`;
+                _client.Send(new SetTdlibParameters(
+                    useTestDc: _settings.UseTestDC,
+                    databaseDirectory: databaseDirectory,
+                    filesDirectory: string.Empty,
+                    databaseEncryptionKey: null,
+                    useFileDatabase: true,
+                    useChatInfoDatabase: true,
+                    useMessageDatabase: useMessageDatabase,
+                    useSecretChats: true,
+                    apiId: Constants.ApiId,
+                    apiHash: Constants.ApiHash,
+                    systemLanguageCode: _deviceInfoService.SystemLanguageCode,
+                    deviceModel: deviceModel,
+                    systemVersion: _deviceInfoService.SystemVersion,
+                    applicationVersion: _deviceInfoService.ApplicationVersion));
+                Send(new GetApplicationConfig(), UpdateConfig);`;
 
 export async function patchUnigram(root: string): Promise<PatchResult> {
   const changedFiles: string[] = [];
