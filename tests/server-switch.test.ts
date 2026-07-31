@@ -18,6 +18,7 @@ describe("Unigram server switch integration", () => {
     expect(patcher).toContain("AppRestartFailureReason.RestartPending");
     expect(patcher).not.toContain("AppRestartFailureReason.None");
     expect(patcher).toContain("patchAuthorizationQrRefresh(source)");
+    expect(patcher).toContain("patchAuthorizationRequestTransition(source)");
   });
 
   it("keeps official and custom databases isolated", async () => {

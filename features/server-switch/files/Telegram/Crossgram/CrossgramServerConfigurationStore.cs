@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using Windows.Storage;
 
@@ -6,13 +7,27 @@ namespace Telegram.Crossgram
     public static class CrossgramServerConfigurationStore
     {
         private const string ConfigurationKey = "CrossgramServerConfiguration";
+        private static readonly Dictionary<int, string> ProcessConfigurations = new();
 
         public static string LoadRaw(int sessionId)
         {
             var container = Container(sessionId);
-            return container.Values.TryGetValue(ConfigurationKey, out var value)
-                ? value as string ?? string.Empty
-                : string.Empty;
+            if (container.Values.TryGetValue(ConfigurationKey, out var value)
+                && value is string persisted
+                && !string.IsNullOrWhiteSpace(persisted))
+            {
+                ProcessConfigurations[sessionId] = persisted;
+                return persisted;
+            }
+            if (ProcessConfigurations.TryGetValue(sessionId, out var cached))
+            {
+                // Unigram recreates TDLib while switching between QR and phone
+                // authorization. Keep the selected server authoritative even if
+                // session settings are cleared during that in-process handoff.
+                container.Values[ConfigurationKey] = cached;
+                return cached;
+            }
+            return string.Empty;
         }
 
         public static CrossgramServerConfiguration Load(int sessionId)
@@ -25,11 +40,14 @@ namespace Telegram.Crossgram
 
         public static void Save(int sessionId, CrossgramServerConfiguration configuration)
         {
-            Container(sessionId).Values[ConfigurationKey] = configuration.Serialize();
+            var serialized = configuration.Serialize();
+            ProcessConfigurations[sessionId] = serialized;
+            Container(sessionId).Values[ConfigurationKey] = serialized;
         }
 
         public static void Clear(int sessionId)
         {
+            ProcessConfigurations.Remove(sessionId);
             Container(sessionId).Values.Remove(ConfigurationKey);
         }
 

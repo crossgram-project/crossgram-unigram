@@ -1,5 +1,6 @@
 using System.IO;
 using Telegram.Crossgram;
+using Windows.Storage;
 using Xunit;
 
 namespace Crossgram.Unigram.Tests;
@@ -44,5 +45,24 @@ public sealed class CrossgramServerConfigurationStoreTests
             Path.Combine("root", "7", "crossgram", parsed.DatabaseNamespace),
             custom);
         Assert.NotEqual(official, custom);
+    }
+
+    [Fact]
+    public void RestoresConfigurationWhenSessionSettingsAreClearedDuringTdlibRecreation()
+    {
+        const int session = 44;
+        CrossgramServerConfigurationStore.Clear(session);
+        var parsed = CrossgramServerConfiguration.Parse(Configuration);
+        CrossgramServerConfigurationStore.Save(session, parsed);
+
+        ApplicationData.Current.LocalSettings
+            .CreateContainer(session.ToString(), ApplicationDataCreateDisposition.Always)
+            .Values.Clear();
+
+        Assert.Equal(parsed.Serialize(), CrossgramServerConfigurationStore.LoadRaw(session));
+        Assert.Equal("office-qq", CrossgramServerConfigurationStore.Load(session).Id);
+
+        CrossgramServerConfigurationStore.Clear(session);
+        Assert.Null(CrossgramServerConfigurationStore.Load(session));
     }
 }

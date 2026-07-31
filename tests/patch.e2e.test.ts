@@ -84,6 +84,10 @@ describe("current Unigram source patch", () => {
     expect(qrState).toBeGreaterThan(-1);
     expect(qrStateEnd).toBeGreaterThan(qrState);
     expect(viewModel.slice(qrState, qrStateEnd)).not.toContain("mode != NavigationMode.Refresh");
+    expect(viewModel).toContain("private bool _switchingToPhoneNumber;");
+    expect(viewModel).toContain("var currentAuthState = ClientService.AuthorizationState;");
+    expect(viewModel).toContain("if (!_switchingToPhoneNumber)");
+    expect(viewModel).toContain("_switchingToPhoneNumber = true;");
     expect(build).toContain("corepack yarn patch:source --source");
   });
 });

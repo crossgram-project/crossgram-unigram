@@ -2,7 +2,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { readUtf8, writeUtf8IfChanged } from "./core/files.js";
-import { patchAuthorizationQrRefresh } from "./core/authorization.js";
+import {
+  patchAuthorizationQrRefresh,
+  patchAuthorizationRequestTransition,
+} from "./core/authorization.js";
 import { patchTdJsonClient, patchTdJsonSerialization } from "./core/tdjson-abi.js";
 import { insertAfterOnce, insertBeforeOnce, replaceOnce } from "./core/text-edit.js";
 
@@ -167,7 +170,8 @@ export async function patchUnigram(root: string): Promise<PatchResult> {
         "crossgram-server-switch",
         "Telegram/ViewModels/Authorization/AuthorizationViewModel.cs",
       );
-      return patchAuthorizationQrRefresh(source);
+      source = patchAuthorizationQrRefresh(source);
+      return patchAuthorizationRequestTransition(source);
     },
   );
 
