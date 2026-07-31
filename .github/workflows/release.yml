@@ -37,6 +37,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
       - run: corepack enable
       - run: yarn install --immutable
       - run: yarn check
@@ -264,6 +267,30 @@ jobs:
         if: steps.package.outcome == 'failure'
         shell: pwsh
         run: throw 'Unigram package build failed; XAML diagnostics were uploaded'
+
+      - name: Verify standard TDLib JSON ABI
+        shell: pwsh
+        run: |
+          $appPackages = Get-ChildItem upstream\Telegram.Msix\AppPackages -Directory | Select-Object -First 1
+          if ($null -eq $appPackages) {
+            throw 'MSBuild did not produce an AppPackages directory'
+          }
+          $vclibs = Get-ChildItem $appPackages.FullName -Recurse -File |
+            Where-Object { $_.Name -eq 'Microsoft.VCLibs.x64.14.00.appx' } |
+            Select-Object -First 1
+          if ($null -eq $vclibs) {
+            throw 'The x64 Microsoft.VCLibs dependency package was not produced'
+          }
+          $vclibsDirectory = Join-Path $PWD 'artifacts\tdjson-vclibs-x64'
+          New-Item -ItemType Directory -Force $vclibsDirectory | Out-Null
+          tar.exe -xf $vclibs.FullName -C $vclibsDirectory
+          if ($LASTEXITCODE -ne 0) {
+            throw "Failed to extract $($vclibs.FullName)"
+          }
+          python .\scripts\test-tdjson-abi.py `
+            --tdjson upstream\Libraries\tdjson\x64\tdjson.dll `
+            --dll-directory upstream\Libraries\tdjson\x64 `
+            --dll-directory $vclibsDirectory
 
       - name: Collect and verify release assets
         shell: pwsh

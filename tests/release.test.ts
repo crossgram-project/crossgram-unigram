@@ -49,6 +49,10 @@ describe("Windows release contract", () => {
     expect(workflow).toContain("Verify direct-download TDLib for UWP");
     expect(workflow.match(/upstream\\Libraries\\tdjson\\td_api\.tl/g)).toHaveLength(3);
     expect(workflow).toContain("Generated TDLib API scheme was not exported");
+    expect(workflow).toContain("actions/setup-python@v5");
+    expect(workflow).toContain("Verify standard TDLib JSON ABI");
+    expect(workflow).toContain("test-tdjson-abi.py");
+    expect(workflow).toContain("Microsoft.VCLibs.x64.14.00.appx");
     expect(workflow).toContain("a48b04575e41-v2");
     expect(workflow).toContain("Push-Location upstream\\Libraries\\tdjson");
     expect(workflow).toContain("& .\\build.ps1");

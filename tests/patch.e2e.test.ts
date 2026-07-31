@@ -8,6 +8,8 @@ import { patchUnigram } from "../src/patch.js";
 const sourceRoot = process.env.CROSSGRAM_UNIGRAM_SOURCE;
 const inputs = [
   "Telegram/Services/ClientService.cs",
+  "Telegram/Td/Client.cs",
+  "Telegram/Td/ClientJson.cs",
   "Telegram/ViewModels/Authorization/AuthorizationViewModel.cs",
   "Telegram/Views/Authorization/AuthorizationPage.xaml",
   "Telegram/Telegram.csproj",
@@ -41,6 +43,8 @@ describe("current Unigram source patch", () => {
       "Telegram/Crossgram/CrossgramServerConfigurationStore.cs",
       "Telegram/Crossgram/ServerConfigurationPopup.xaml.cs",
       "Telegram/Services/ClientService.cs",
+      "Telegram/Td/Client.cs",
+      "Telegram/Td/ClientJson.cs",
       "Telegram/Telegram.csproj",
       "Telegram/ViewModels/Authorization/AuthorizationViewModel.cs",
       "Telegram/Views/Authorization/AuthorizationPage.xaml",
@@ -48,6 +52,8 @@ describe("current Unigram source patch", () => {
     expect((await patchUnigram(root)).changedFiles).toEqual([]);
 
     const client = await readFile(path.join(root, "Telegram/Services/ClientService.cs"), "utf8");
+    const tdClient = await readFile(path.join(root, "Telegram/Td/Client.cs"), "utf8");
+    const clientJson = await readFile(path.join(root, "Telegram/Td/ClientJson.cs"), "utf8");
     const viewModel = await readFile(
       path.join(root, "Telegram/ViewModels/Authorization/AuthorizationViewModel.cs"),
       "utf8",
@@ -59,6 +65,14 @@ describe("current Unigram source patch", () => {
     expect(option).toBeGreaterThan(-1);
     expect(parameters).toBeGreaterThan(option);
     expect(client).toContain("CrossgramServerConfigurationStore.DatabaseDirectory");
+    expect(tdClient).toContain("private static extern unsafe void td_send(int client_id, byte* request);");
+    expect(tdClient).toContain("private static extern unsafe byte* td_receive(double timeout);");
+    expect(tdClient).toContain("ClientJson.ToJson(_writer, function, requestId)");
+    expect(tdClient).toContain("ClientJson.ReadRoutingMetadata(span, out clientId, out requestId);");
+    expect(tdClient).not.toContain("td_send(int client_id, long request_id");
+    expect(clientJson).toContain('_writer.WriteNumber("@extra", requestId);');
+    expect(clientJson).toContain('reader.ValueTextEquals("@client_id"u8)');
+    expect(clientJson).toContain('reader.ValueTextEquals("@extra"u8)');
     expect(viewModel).toContain('RequestRestartAsync("crossgram-server-switch")');
     expect(viewModel).toContain("AppRestartFailureReason.RestartPending");
     expect(viewModel).not.toContain("AppRestartFailureReason.None");
