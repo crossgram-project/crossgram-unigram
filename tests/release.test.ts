@@ -24,6 +24,7 @@ describe("Windows release contract", () => {
     expect(workflow).not.toContain("$apiId = '1'");
     expect(workflow).not.toContain("00000000000000000000000000000000");
     expect(workflow).toContain("The release uses Crossgram's Telegram API identity by default");
+    expect(workflow).toContain("-PackageRevision ([int]$env:GITHUB_RUN_NUMBER)");
     expect(workflow).not.toContain("Official Telegram login requires a build");
     expect(workflow).toContain("boost-regex:x64-uwp");
     expect(workflow).toContain("ffmpeg:x64-uwp");
@@ -76,6 +77,9 @@ describe("Windows release contract", () => {
   it("prepares a distinct signed package without the private WebRTC tree", async () => {
     const script = await readFile(path.resolve("scripts/prepare-release.ps1"), "utf8");
     expect(script).toContain("CrossgramProject.CrossgramUnigram");
+    expect(script).toContain("[ValidateRange(1, 65535)]");
+    expect(script).toContain("Set-PackageRevision");
+    expect(script).toContain("$crossgramVersionLine");
     expect(script).toContain("Constants.Secret.cs");
     expect(script).toContain("Telegram\\.Native\\.Calls");
     expect(script).toContain("ENABLE_CALLS;");

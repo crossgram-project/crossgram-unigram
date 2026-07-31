@@ -87,7 +87,11 @@ jobs:
           } elseif ($missingId -or $missingHash) {
             throw 'Set both CROSSGRAM_TELEGRAM_API_ID and CROSSGRAM_TELEGRAM_API_HASH secrets'
           }
-          .\scripts\prepare-release.ps1 -Source upstream -ApiId ([int]$apiId) -ApiHash $apiHash
+          .\scripts\prepare-release.ps1 `
+            -Source upstream `
+            -ApiId ([int]$apiId) `
+            -ApiHash $apiHash `
+            -PackageRevision ([int]$env:GITHUB_RUN_NUMBER)
 
       - name: Clone direct-download TDLib patcher
         shell: pwsh
