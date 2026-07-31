@@ -78,6 +78,12 @@ describe("current Unigram source patch", () => {
     expect(viewModel).toContain('RequestRestartAsync("crossgram-server-switch")');
     expect(viewModel).toContain("AppRestartFailureReason.RestartPending");
     expect(viewModel).not.toContain("AppRestartFailureReason.None");
+    expect(viewModel).toContain("The TDLib authorization state is authoritative.");
+    const qrState = viewModel.indexOf("AuthorizationStateWaitOtherDeviceConfirmation waitOtherDeviceConfirmation");
+    const qrStateEnd = viewModel.indexOf("return Task.CompletedTask;", qrState);
+    expect(qrState).toBeGreaterThan(-1);
+    expect(qrStateEnd).toBeGreaterThan(qrState);
+    expect(viewModel.slice(qrState, qrStateEnd)).not.toContain("mode != NavigationMode.Refresh");
     expect(build).toContain("corepack yarn patch:source --source");
   });
 });

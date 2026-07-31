@@ -17,6 +17,7 @@ describe("Unigram server switch integration", () => {
     expect(patcher).toContain("would deadlock startup and leave the root frame black");
     expect(patcher).toContain("AppRestartFailureReason.RestartPending");
     expect(patcher).not.toContain("AppRestartFailureReason.None");
+    expect(patcher).toContain("patchAuthorizationQrRefresh(source)");
   });
 
   it("keeps official and custom databases isolated", async () => {
