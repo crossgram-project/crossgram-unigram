@@ -36,6 +36,18 @@ describe("release source preparation", () => {
       { recursive: true },
     );
     await writeFile(
+      path.join(root, "Telegram", "Package.appxmanifest"),
+      `<?xml version="1.0" encoding="utf-8"?>
+<Package><Identity Name="Telegram" Publisher="CN=Test" Version="12.8.0.0" /></Package>`,
+      "utf8",
+    );
+    await writeFile(
+      path.join(root, "Telegram.Msix", "Package.appxmanifest"),
+      `<?xml version="1.0" encoding="utf-8"?>
+<Package><Identity Name="Telegram" Publisher="CN=Test" Version="12.8.0.0" /></Package>`,
+      "utf8",
+    );
+    await writeFile(
       path.join(root, "Telegram", "Telegram.csproj"),
       `<Project>
   <PropertyGroup><DefineConstants>TRACE;ENABLE_CALLS;CODE_ANALYSIS</DefineConstants></PropertyGroup>
@@ -136,6 +148,15 @@ Publisher = 'CN=Telegram FZ-LLC, O=Telegram FZ-LLC';
 DisplayName = ("Unigram{0}Telegram for Windows" -f [char]0x2014);
 PublisherDisplayName = "Telegram FZ-LLC";
 AppName = "Unigram"
+}
+$identity = $document.GetElementsByTagName("Identity")[0]
+$version = $identity.Attributes["Version"].Value
+$regex = [regex]'(?:(\d+)\.)(?:(\d+)\.)(?:(\d*?)\.\d+)'
+if ($config -eq "RELEASE") {
+    $identity.Attributes["Version"].Value = $regex.Replace($version, '$1.$2.$3.0')
+}
+else {
+    $identity.Attributes["Version"].Value = $regex.Replace($version, '$1.$2.$3.{0}' -f $out)
 }`,
       "utf8",
     );
@@ -168,6 +189,8 @@ AppName = "Unigram"
       "12345",
       "-ApiHash",
       "0123456789abcdef0123456789abcdef",
+      "-PackageRevision",
+      "42",
     ]);
     await execFileAsync(powershell, [
       "-NoProfile",
@@ -179,6 +202,8 @@ AppName = "Unigram"
       "12345",
       "-ApiHash",
       "0123456789abcdef0123456789abcdef",
+      "-PackageRevision",
+      "42",
     ]);
     await execFileAsync(powershell, [
       "-NoProfile",
@@ -209,6 +234,11 @@ AppName = "Unigram"
       "utf8",
     );
     const manifestScript = await readFile(path.join(root, "UpdateManifest.ps1"), "utf8");
+    const appManifest = await readFile(path.join(root, "Telegram", "Package.appxmanifest"), "utf8");
+    const msixManifest = await readFile(
+      path.join(root, "Telegram.Msix", "Package.appxmanifest"),
+      "utf8",
+    );
     const libVlcTargets = await readFile(
       path.join(
         root,
@@ -259,6 +289,11 @@ AppName = "Unigram"
     expect(msixProject.match(/Microsoft\.NETCore\.App\.Runtime\.NativeAOT\.win-x64/g)).toHaveLength(1);
     expect(manifestScript.match(/CrossgramProject\.CrossgramUnigram/g)).toHaveLength(3);
     expect(manifestScript.match(/Crossgram Unigram/g)?.length).toBeGreaterThanOrEqual(6);
+    expect(manifestScript.match(/\$1\.\$2\.\$3\.42/g)).toHaveLength(2);
+    expect(manifestScript).not.toContain("$1.$2.$3.0");
+    expect(manifestScript).not.toContain("$1.$2.$3.{0}");
+    expect(appManifest).toContain('Version="12.8.0.42"');
+    expect(msixManifest).toContain('Version="12.8.0.42"');
     expect(libVlcTargets).toContain('SDKReference Include="Microsoft.VCLibs, Version=14.0"');
     expect(libVlcTargets).not.toContain("Microsoft.VCLibs.120");
     expect(libVlcMediaHeader).toContain("typedef SSIZE_T ssize_t;");

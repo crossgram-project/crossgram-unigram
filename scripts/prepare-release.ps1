@@ -4,7 +4,10 @@ param (
   [Parameter(Mandatory = $true)]
   [int]$ApiId,
   [Parameter(Mandatory = $true)]
-  [string]$ApiHash
+  [string]$ApiHash,
+  [Parameter(Mandatory = $true)]
+  [ValidateRange(1, 65535)]
+  [int]$PackageRevision
 )
 
 $ErrorActionPreference = "Stop"
@@ -20,6 +23,21 @@ if ($ApiHash -notmatch '^[0-9a-fA-F]{32}$') {
 function Write-Utf8NoBom([string]$Path, [string]$Content) {
   [System.IO.File]::WriteAllText($Path, $Content, [System.Text.UTF8Encoding]::new($false))
 }
+
+function Set-PackageRevision([string]$ManifestPath) {
+  $manifest = [System.IO.File]::ReadAllText($ManifestPath)
+  $versionPattern = [regex]'(<Identity\b[^>]*\bVersion="\d+\.\d+\.\d+\.)\d+(")'
+  if (-not $versionPattern.IsMatch($manifest)) {
+    throw "$ManifestPath does not contain a four-component package identity version"
+  }
+  $updated = $versionPattern.Replace($manifest, "`${1}$PackageRevision`${2}", 1)
+  if ($updated -ne $manifest) {
+    Write-Utf8NoBom $ManifestPath $updated
+  }
+}
+
+Set-PackageRevision (Join-Path $sourceRoot "Telegram\Package.appxmanifest")
+Set-PackageRevision (Join-Path $sourceRoot "Telegram.Msix\Package.appxmanifest")
 
 $secretPath = Join-Path $sourceRoot "Telegram\Constants.Secret.cs"
 $secret = @"
@@ -509,6 +527,26 @@ Write-Utf8NoBom $telegramProjectPath $telegramProject
 # the checked-in temporary certificate so Windows can verify the signature.
 $updateManifestPath = Join-Path $sourceRoot "UpdateManifest.ps1"
 $updateManifest = [System.IO.File]::ReadAllText($updateManifestPath)
+$releaseVersionLine = '$identity.Attributes["Version"].Value = $regex.Replace($version, ''$1.$2.$3.0'')'
+$developmentVersionLine = '$identity.Attributes["Version"].Value = $regex.Replace($version, ''$1.$2.$3.{0}'' -f $out)'
+$crossgramVersionLine = "`$identity.Attributes[`"Version`"].Value = `$regex.Replace(`$version, '`$1.`$2.`$3.$PackageRevision')"
+$crossgramVersionCount = [regex]::Matches(
+  $updateManifest,
+  [regex]::Escape($crossgramVersionLine)
+).Count
+if ($crossgramVersionCount -eq 0) {
+  if (-not $updateManifest.Contains($releaseVersionLine)) {
+    throw "UpdateManifest.ps1 does not contain the release package version assignment"
+  }
+  if (-not $updateManifest.Contains($developmentVersionLine)) {
+    throw "UpdateManifest.ps1 does not contain the development package version assignment"
+  }
+  $updateManifest = $updateManifest.Replace($releaseVersionLine, $crossgramVersionLine)
+  $updateManifest = $updateManifest.Replace($developmentVersionLine, $crossgramVersionLine)
+}
+elseif ($crossgramVersionCount -ne 2) {
+  throw "UpdateManifest.ps1 contains an unexpected number of Crossgram package version assignments"
+}
 $updateManifest = [regex]::Replace(
   $updateManifest,
   'Name = "(?:38833FF26BA1D\.UnigramExperimental|38833FF26BA1D\.UnigramPreview|TelegramFZ-LLC\.Windows)";',
