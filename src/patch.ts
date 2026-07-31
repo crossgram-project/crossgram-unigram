@@ -2,6 +2,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { readUtf8, writeUtf8IfChanged } from "./core/files.js";
+import { patchTdJsonClient, patchTdJsonSerialization } from "./core/tdjson-abi.js";
 import { insertAfterOnce, insertBeforeOnce, replaceOnce } from "./core/text-edit.js";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -201,6 +202,9 @@ export async function patchUnigram(root: string): Promise<PatchResult> {
       "Telegram/Telegram.csproj",
     );
   });
+
+  await editFile(root, "Telegram/Td/Client.cs", changedFiles, patchTdJsonClient);
+  await editFile(root, "Telegram/Td/ClientJson.cs", changedFiles, patchTdJsonSerialization);
 
   await editFile(root, "Libraries/tdjson/build.ps1", changedFiles, (source) => {
     source = replaceOnce(
