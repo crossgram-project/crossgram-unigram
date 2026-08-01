@@ -5,6 +5,7 @@ import { readUtf8, writeUtf8IfChanged } from "./core/files.js";
 import {
   patchAuthorizationQrRefresh,
   patchAuthorizationRequestTransition,
+  patchSessionAuthorizationTransition,
 } from "./core/authorization.js";
 import { patchTdJsonClient, patchTdJsonSerialization } from "./core/tdjson-abi.js";
 import { insertAfterOnce, insertBeforeOnce, replaceOnce } from "./core/text-edit.js";
@@ -115,6 +116,13 @@ export async function patchUnigram(root: string): Promise<PatchResult> {
       "Telegram/Services/ClientService.cs",
     );
   });
+
+  await editFile(
+    root,
+    "Telegram/Services/Session.cs",
+    changedFiles,
+    patchSessionAuthorizationTransition,
+  );
 
   await editFile(
     root,

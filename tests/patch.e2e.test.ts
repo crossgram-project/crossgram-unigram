@@ -8,6 +8,7 @@ import { patchUnigram } from "../src/patch.js";
 const sourceRoot = process.env.CROSSGRAM_UNIGRAM_SOURCE;
 const inputs = [
   "Telegram/Services/ClientService.cs",
+  "Telegram/Services/Session.cs",
   "Telegram/Td/Client.cs",
   "Telegram/Td/ClientJson.cs",
   "Telegram/ViewModels/Authorization/AuthorizationViewModel.cs",
@@ -43,6 +44,7 @@ describe("current Unigram source patch", () => {
       "Telegram/Crossgram/CrossgramServerConfigurationStore.cs",
       "Telegram/Crossgram/ServerConfigurationPopup.xaml.cs",
       "Telegram/Services/ClientService.cs",
+      "Telegram/Services/Session.cs",
       "Telegram/Td/Client.cs",
       "Telegram/Td/ClientJson.cs",
       "Telegram/Telegram.csproj",
@@ -52,6 +54,7 @@ describe("current Unigram source patch", () => {
     expect((await patchUnigram(root)).changedFiles).toEqual([]);
 
     const client = await readFile(path.join(root, "Telegram/Services/ClientService.cs"), "utf8");
+    const session = await readFile(path.join(root, "Telegram/Services/Session.cs"), "utf8");
     const tdClient = await readFile(path.join(root, "Telegram/Td/Client.cs"), "utf8");
     const clientJson = await readFile(path.join(root, "Telegram/Td/ClientJson.cs"), "utf8");
     const viewModel = await readFile(
@@ -84,10 +87,18 @@ describe("current Unigram source patch", () => {
     expect(qrState).toBeGreaterThan(-1);
     expect(qrStateEnd).toBeGreaterThan(qrState);
     expect(viewModel.slice(qrState, qrStateEnd)).not.toContain("mode != NavigationMode.Refresh");
-    expect(viewModel).toContain("private bool _switchingToPhoneNumber;");
+    expect(session).toContain("bool SuppressAutomaticQrAuthentication { get; }");
+    expect(session).toContain("SuppressAutomaticQrAuthentication = true;");
+    expect(session).toContain("SuppressAutomaticQrAuthentication = false;");
+    expect(session).toContain("TaskCreationOptions.RunContinuationsAsynchronously");
+    expect(session).toContain("ClientService.AuthorizationState is not AuthorizationStateWaitOtherDeviceConfirmation");
     expect(viewModel).toContain("var currentAuthState = ClientService.AuthorizationState;");
-    expect(viewModel).toContain("if (!_switchingToPhoneNumber)");
-    expect(viewModel).toContain("_switchingToPhoneNumber = true;");
+    expect(viewModel).toContain("Session.SuppressAutomaticQrAuthentication");
+    expect(viewModel).toContain("authState is AuthorizationStateWaitPhoneNumber");
+    expect(viewModel).toContain("currentAuthState is AuthorizationStateWaitPhoneNumber");
+    expect(viewModel).toContain("await Session.SetAuthenticationPhoneNumberAsync(function)");
+    expect(viewModel).toContain("Session.RequestQrCodeAuthentication(null);");
+    expect(viewModel).not.toContain("_switchingToPhoneNumber");
     expect(build).toContain("corepack yarn patch:source --source");
   });
 });
